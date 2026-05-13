@@ -1,13 +1,109 @@
 import QRGenerator from '@/components/QRGenerator';
+import Footer from '@/components/Footer';
 
 export const metadata = {
   title: 'TrueQR — Free QR Code Generator. No Tricks, No Expiration.',
-  description: 'Generate permanent, free QR codes instantly. No account required. No expiration. We explain exactly what you\'re getting before you generate. Static QR codes are free forever.',
+  description:
+    "Generate permanent, free QR codes instantly. No account required. No expiration. We explain exactly what you're getting before you generate. Static QR codes are free forever.",
 };
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: 'TrueQR',
+  url: 'https://trueqr.vercel.app',
+  description:
+    'Free static QR code generator. Generate permanent QR codes for URLs, WiFi, vCards, email, phone, and text — no account required, no expiration.',
+  applicationCategory: 'UtilitiesApplication',
+  operatingSystem: 'Any',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'USD',
+    description: 'Free static QR code generation — no account required.',
+  },
+  featureList: [
+    'URL QR codes',
+    'WiFi QR codes',
+    'vCard QR codes',
+    'Email QR codes',
+    'Phone QR codes',
+    'Text QR codes',
+    'PNG and SVG download',
+    'Custom colors',
+    'No account required',
+    'No expiration',
+  ],
+};
+
+const HOW_IT_WORKS = [
+  {
+    step: '1',
+    title: 'Choose your QR type',
+    desc: 'Select from URL, WiFi, vCard, email, phone, or plain text. Each type encodes information in the optimal format for that use case.',
+  },
+  {
+    step: '2',
+    title: 'Fill in your details',
+    desc: 'Enter your URL, network credentials, contact info, or message. Customize the color and size to match your brand.',
+  },
+  {
+    step: '3',
+    title: 'Download and use forever',
+    desc: 'Click Generate, then download PNG or SVG. Your static QR code is ready to print, embed, or share — and it will work forever.',
+  },
+];
+
+const WHY_TRUEQR = [
+  {
+    icon: '🆓',
+    title: 'Free forever',
+    desc: 'Static QR codes physically encode your destination directly into the pattern. No server needed — which means no subscription can take them away from you.',
+  },
+  {
+    icon: '🚫',
+    title: 'No account needed',
+    desc: "Generate, download, done. We don't require an email address, phone number, or credit card to hand you a PNG file.",
+  },
+  {
+    icon: '📴',
+    title: 'Works offline',
+    desc: "Because your data is baked into the QR pattern itself, scanners don't need internet access to read it. Perfect for menus, signs, and print materials.",
+  },
+];
+
+const FAQ = [
+  {
+    q: "What's the difference between a static and dynamic QR code?",
+    a: "A static QR code encodes your destination (URL, text, contact info) directly into the black-and-white pattern. It requires no server and cannot expire. A dynamic QR code encodes a redirect URL — meaning a third-party server must be running to forward scans to your actual destination. That server requires a subscription to stay active, and when the subscription lapses, the code breaks.",
+  },
+  {
+    q: 'Will my free QR code ever expire?',
+    a: "No. TrueQR's free QR codes are static. There's no server involved, so there's nothing to expire, break, or be held behind a paywall. The code you download today will scan correctly in 10 years.",
+  },
+  {
+    q: "Why do other QR generators' free codes stop working?",
+    a: 'Most popular QR generators create dynamic codes by default — or without telling you. Dynamic codes route through their servers. When your free trial ends or they change their pricing, your code breaks. We create static codes and always tell you which type you\'re getting.',
+  },
+  {
+    q: 'When would I want a dynamic QR code?',
+    a: 'Dynamic codes make sense when you need to change the destination after printing (e.g., you printed 10,000 menus and your menu URL changed), or when you need scan analytics (how many scans, from where, at what time). TrueQR offers dynamic codes on paid plans starting at $12/month.',
+  },
+  {
+    q: 'Can I use TrueQR QR codes for commercial purposes?',
+    a: 'Yes. There are no restrictions on how you use QR codes generated on TrueQR. Use them on business cards, storefronts, packaging, marketing materials, or anywhere else — free or paid plan.',
+  },
+];
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-gray-950 text-white">
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       {/* Hero */}
       <section className="max-w-4xl mx-auto px-4 pt-16 pb-8 text-center">
         <div className="inline-flex items-center gap-2 bg-emerald-950 border border-emerald-800 text-emerald-400 text-sm px-3 py-1 rounded-full mb-6">
@@ -18,11 +114,14 @@ export default function Home() {
           The honest QR code generator
         </h1>
         <p className="text-lg text-gray-400 max-w-2xl mx-auto mb-2">
-          Static QR codes are <strong className="text-white">free forever</strong> — they encode your URL directly, require no server, and cannot expire.
-          No surprises after you print your flyers.
+          Static QR codes are{' '}
+          <strong className="text-white">free forever</strong> — they encode
+          your URL directly, require no server, and cannot expire. No surprises
+          after you print your flyers.
         </p>
         <p className="text-sm text-gray-600 mb-10">
-          Dynamic QR codes (editable destination + scan analytics) are a paid subscription. We&apos;ll always tell you which is which.
+          Dynamic QR codes (editable destination + scan analytics) are a paid
+          subscription. We&apos;ll always tell you which is which.
         </p>
         <QRGenerator />
       </section>
@@ -43,40 +142,67 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Why TrueQR */}
+      {/* How it works */}
       <section className="max-w-3xl mx-auto px-4 py-16">
-        <h2 className="text-2xl font-bold mb-8 text-center">Why TrueQR?</h2>
-        <div className="grid sm:grid-cols-2 gap-6">
-          {[
-            {
-              title: 'No expiration scam',
-              desc: 'Most "free" QR generators create dynamic codes that expire in 7–14 days. You print your materials, the codes break, and you\'re forced to pay. We create static codes that physically cannot expire.',
-            },
-            {
-              title: 'We tell you what you\'re getting',
-              desc: 'Before you generate, we explain the difference between static and dynamic QR codes — in plain English. No fine print.',
-            },
-            {
-              title: 'No account for free codes',
-              desc: 'Generate, download, done. We don\'t require an email address to hand you a PNG file.',
-            },
-            {
-              title: 'Honest paid features',
-              desc: 'Want to change the destination after printing, or see scan analytics? That\'s a $12/mo subscription. No hidden scan caps, no branding on free tier, no bait-and-switch.',
-            },
-          ].map(({ title, desc }) => (
-            <div key={title} className="bg-gray-900 rounded-xl p-5 border border-gray-800">
-              <h3 className="font-semibold mb-2 text-white">{title}</h3>
+        <h2 className="text-2xl font-bold mb-2 text-center">How it works</h2>
+        <p className="text-gray-500 text-center text-sm mb-10">
+          Generate a permanent QR code in under 30 seconds — no account required.
+        </p>
+        <div className="grid sm:grid-cols-3 gap-6">
+          {HOW_IT_WORKS.map(({ step, title, desc }) => (
+            <div
+              key={step}
+              className="relative bg-gray-900 rounded-xl p-6 border border-gray-800 text-center"
+            >
+              <div className="w-10 h-10 rounded-full bg-indigo-600 text-white font-bold text-lg flex items-center justify-center mx-auto mb-4">
+                {step}
+              </div>
+              <h3 className="font-semibold text-white mb-2">{title}</h3>
               <p className="text-gray-400 text-sm leading-relaxed">{desc}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-800 py-8 text-center text-gray-600 text-sm">
-        <p>© 2026 TrueQR · <a href="/blog/static-vs-dynamic-qr-code" className="hover:text-gray-400 underline">Static vs Dynamic Guide</a> · <a href="/pricing" className="hover:text-gray-400 underline">Pricing</a></p>
-      </footer>
+      {/* Why TrueQR */}
+      <section className="max-w-3xl mx-auto px-4 py-16 border-t border-gray-800">
+        <h2 className="text-2xl font-bold mb-2 text-center">Why TrueQR?</h2>
+        <p className="text-gray-500 text-center text-sm mb-10">
+          We built the tool we wished existed when we got burned by expiring free QR codes.
+        </p>
+        <div className="grid sm:grid-cols-3 gap-6">
+          {WHY_TRUEQR.map(({ icon, title, desc }) => (
+            <div
+              key={title}
+              className="bg-gray-900 rounded-xl p-6 border border-gray-800 text-center"
+            >
+              <div className="text-3xl mb-3">{icon}</div>
+              <h3 className="font-semibold text-white mb-2">{title}</h3>
+              <p className="text-gray-400 text-sm leading-relaxed">{desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="max-w-2xl mx-auto px-4 py-16 border-t border-gray-800">
+        <h2 className="text-2xl font-bold mb-2 text-center">
+          Frequently asked questions
+        </h2>
+        <p className="text-gray-500 text-center text-sm mb-10">
+          Everything you need to know about static vs dynamic QR codes.
+        </p>
+        <div className="space-y-6">
+          {FAQ.map(({ q, a }) => (
+            <div key={q} className="bg-gray-900 rounded-xl p-6 border border-gray-800">
+              <h3 className="font-semibold text-white mb-2">{q}</h3>
+              <p className="text-gray-400 text-sm leading-relaxed">{a}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <Footer />
     </main>
   );
 }
