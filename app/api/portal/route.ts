@@ -1,32 +1,46 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 import Stripe from 'stripe';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2026-04-22.dahlia' as never });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2023-10-16',
+});
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-export async function POST(req: Request) {
+export async function POST() {
   try {
-    const { userId } = await req.json();
-    if (!userId) return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll: () => cookieStore.getAll(),
+          setAll: () => {},
+        },
+      }
+    );
 
-    const { data: user } = await supabase
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { data: userData, error } = await supabaseAdmin
       .from('users')
       .select('stripe_customer_id')
-      .eq('id', userId)
+      .eq('id', user.id)
       .single();
 
-    if (!user?.stripe_customer_id) {
-      return NextResponse.json({ error: 'No Stripe customer found' }, { status: 404 });
+    if (error || !userData?.stripe_customer_id) {
+      return NextResponse.json({ error: 'No billing account found' }, { status: 400 });
     }
 
     const session = await stripe.billingPortal.sessions.create({
-      customer: user.stripe_customer_id,
-      return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
+      customer: userData.stripe_customer_id,
+      return_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard`,
     });
 
     return NextResponse.json({ url: session.url });
@@ -35,3 +49,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Failed to create portal session' }, { status: 500 });
   }
 }
+```
