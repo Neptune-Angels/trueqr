@@ -77,11 +77,27 @@ export async function POST(request: NextRequest) {
 async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
   const customerId = session.customer as string;
   const subscriptionId = session.subscription as string;
-
-  // The customer email from the session (may be null if user is already logged in)
+  const supabaseUserId = session.client_reference_id; // set at checkout creation
   const email = session.customer_email ?? session.customer_details?.email ?? '';
 
-  // Try to find user by stripe_customer_id first
+  // Priority 1: use client_reference_id (Supabase user ID) — most reliable
+  if (supabaseUserId) {
+    await supabaseAdmin
+      .from('users')
+      .upsert(
+        {
+          id: supabaseUserId,
+          email,
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscriptionId,
+          plan: 'pro',
+        },
+        { onConflict: 'id' }
+      );
+    return;
+  }
+
+  // Priority 2: existing user already has this customer ID
   const { data: existingUser } = await supabaseAdmin
     .from('users')
     .select('id')
@@ -89,7 +105,6 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     .single();
 
   if (existingUser) {
-    // Update existing user
     await supabaseAdmin
       .from('users')
       .update({
@@ -97,46 +112,53 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
         plan: 'pro',
       })
       .eq('id', existingUser.id);
-  } else {
-    // Look up by email from auth.users if we have it
-    if (email) {
-      const { data: authUser } = await supabaseAdmin.auth.admin.listUsers();
-      const matchedUser = authUser?.users?.find((u) => u.email === email);
+    return;
+  }
 
-      if (matchedUser) {
-        // Upsert user record
-        await supabaseAdmin
-          .from('users')
-          .upsert(
-            {
-              id: matchedUser.id,
-              email: matchedUser.email ?? email,
-              stripe_customer_id: customerId,
-              stripe_subscription_id: subscriptionId,
-              plan: 'pro',
-            },
-            { onConflict: 'id' }
-          );
-      } else {
-        // User doesn't exist in auth yet — store a pending record keyed by email
-        // so that when they sign up, we can link and upgrade them automatically.
-        console.log(`Checkout completed for unknown user: ${email}, customer: ${customerId}`);
-        await supabaseAdmin
-          .from('pending_upgrades')
-          .upsert(
-            {
-              email,
-              stripe_customer_id: customerId,
-              stripe_subscription_id: subscriptionId,
-              plan: 'pro',
-              created_at: new Date().toISOString(),
-            },
-            { onConflict: 'email' }
-          )
-          .then(({ error }) => {
-            if (error) console.log('pending_upgrades table not yet created, skipping:', error.message);
-          });
-      }
+  // Priority 3: look up by email — paginate to avoid missing users past page 1
+  if (email) {
+    let matchedId: string | null = null;
+    let page = 1;
+    while (!matchedId) {
+      const { data: authPage } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 });
+      if (!authPage?.users?.length) break;
+      const found = authPage.users.find((u) => u.email === email);
+      if (found) { matchedId = found.id; break; }
+      if (!authPage.users.length || authPage.users.length < 1000) break;
+      page++;
+    }
+
+    if (matchedId) {
+      await supabaseAdmin
+        .from('users')
+        .upsert(
+          {
+            id: matchedId,
+            email,
+            stripe_customer_id: customerId,
+            stripe_subscription_id: subscriptionId,
+            plan: 'pro',
+          },
+          { onConflict: 'id' }
+        );
+    } else {
+      // Unknown user — store pending record for post-signup linking
+      console.log(`Checkout for unknown user: ${email}, customer: ${customerId}`);
+      await supabaseAdmin
+        .from('pending_upgrades')
+        .upsert(
+          {
+            email,
+            stripe_customer_id: customerId,
+            stripe_subscription_id: subscriptionId,
+            plan: 'pro',
+            created_at: new Date().toISOString(),
+          },
+          { onConflict: 'email' }
+        )
+        .then(({ error }) => {
+          if (error) console.log('pending_upgrades not yet created, skipping:', error.message);
+        });
     }
   }
 }

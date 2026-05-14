@@ -40,7 +40,7 @@ export async function POST() {
 
     const session = await stripe.billingPortal.sessions.create({
       customer: userData.stripe_customer_id,
-      return_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard`,
+      return_url: `${process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://trueqr.co'}/dashboard`,
     });
 
     return NextResponse.json({ url: session.url });
