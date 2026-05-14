@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://trueqr.vercel.app'),
+  metadataBase: new URL('https://trueqr.co'),
   title: {
     default: 'TrueQR — Free QR Code Generator. No Tricks, No Expiration.',
     template: '%s | TrueQR',
@@ -33,10 +33,13 @@ export const metadata: Metadata = {
     'free QR code generator no sign up',
   ],
   authors: [{ name: 'TrueQR' }],
+  verification: {
+    google: 'p4j3QlFFQFUy2fN6WTWEW52zj6SHuvZFz8AkFhthT8s',
+  },
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://trueqr.vercel.app',
+    url: 'https://trueqr.co',
     siteName: 'TrueQR',
     title: 'TrueQR — Free QR Code Generator. No Tricks, No Expiration.',
     description:
