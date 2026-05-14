@@ -1,0 +1,166 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter, useParams } from 'next/navigation';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+
+interface QRData {
+  id: string;
+  name: string;
+  slug: string;
+  destination_url: string;
+  scan_count: number;
+}
+
+interface DayCount { date: string; count: number; }
+interface CountryCount { country: string; count: number; }
+
+interface Analytics {
+  qr: QRData;
+  total_scans: number;
+  last_30_days: DayCount[];
+  top_countries: CountryCount[];
+}
+
+export default function QRAnalyticsPage() {
+  const params = useParams();
+  const id = params.id as string;
+  const router = useRouter();
+  const [data, setData] = useState<Analytics | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetch(`/api/qr/${id}/analytics`)
+      .then(r => {
+        if (r.status === 401) { router.push('/login'); return null; }
+        if (!r.ok) throw new Error('Failed to load');
+        return r.json();
+      })
+      .then(d => { if (d) setData(d); })
+      .catch(e => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [id, router]);
+
+  if (loading) return (
+    <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
+      <p className="text-gray-400">Loading analytics…</p>
+    </div>
+  );
+
+  if (error || !data) return (
+    <div className="min-h-screen bg-gray-950 text-white flex flex-col">
+      <Header />
+      <main className="flex-1 flex items-center justify-center">
+        <p className="text-red-400">{error || 'Not found'}</p>
+      </main>
+    </div>
+  );
+
+  const { qr, total_scans, last_30_days, top_countries } = data;
+  const maxCount = Math.max(...last_30_days.map(d => d.count), 1);
+
+  return (
+    <div className="min-h-screen bg-gray-950 text-white flex flex-col">
+      <Header />
+      <main className="flex-1 max-w-3xl mx-auto px-4 py-12 w-full">
+        {/* Breadcrumb */}
+        <nav className="text-sm text-gray-500 mb-8">
+          <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
+          <span className="mx-2">/</span>
+          <span className="text-gray-300">{qr.name}</span>
+        </nav>
+
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold mb-1">{qr.name}</h1>
+          <p className="text-gray-400 text-sm break-all">
+            <span className="text-gray-600">→ </span>
+            {qr.destination_url}
+          </p>
+          <p className="text-gray-600 text-xs mt-1">
+            trueqr.co/r/{qr.slug}
+          </p>
+        </div>
+
+        {/* Total scans */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 text-center">
+            <div className="text-3xl font-bold text-emerald-400">{total_scans}</div>
+            <div className="text-gray-400 text-sm mt-1">Total scans</div>
+          </div>
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 text-center">
+            <div className="text-3xl font-bold text-indigo-400">
+              {last_30_days.reduce((s, d) => s + d.count, 0)}
+            </div>
+            <div className="text-gray-400 text-sm mt-1">Last 30 days</div>
+          </div>
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 text-center">
+            <div className="text-3xl font-bold text-white">
+              {last_30_days.filter(d => d.count > 0).length}
+            </div>
+            <div className="text-gray-400 text-sm mt-1">Active days</div>
+          </div>
+        </div>
+
+        {/* Bar chart - last 30 days */}
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-6">
+          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">Scans — last 30 days</h2>
+          <div className="flex items-end gap-1 h-32">
+            {last_30_days.map(({ date, count }) => (
+              <div key={date} className="flex-1 flex flex-col items-center justify-end group relative" title={`${date}: ${count}`}>
+                <div
+                  className="w-full bg-indigo-600 group-hover:bg-indigo-400 rounded-t transition-colors"
+                  style={{ height: `${Math.max((count / maxCount) * 100, count > 0 ? 4 : 0)}%` }}
+                />
+                {/* Tooltip on hover */}
+                <div className="absolute bottom-full mb-1 hidden group-hover:block bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
+                  {date.slice(5)}: {count}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-between text-xs text-gray-600 mt-2">
+            <span>{last_30_days[0]?.date.slice(5)}</span>
+            <span>{last_30_days[14]?.date.slice(5)}</span>
+            <span>{last_30_days[29]?.date.slice(5)}</span>
+          </div>
+        </div>
+
+        {/* Top countries */}
+        {top_countries.length > 0 && (
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-6">
+            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">Top countries</h2>
+            <div className="space-y-3">
+              {top_countries.map(({ country, count }) => {
+                const pct = Math.round((count / (last_30_days.reduce((s, d) => s + d.count, 0) || 1)) * 100);
+                return (
+                  <div key={country} className="flex items-center gap-3">
+                    <span className="text-gray-300 text-sm w-24 shrink-0">{country}</span>
+                    <div className="flex-1 bg-gray-800 rounded-full h-2">
+                      <div className="bg-indigo-500 h-2 rounded-full" style={{ width: `${pct}%` }} />
+                    </div>
+                    <span className="text-gray-400 text-sm w-8 text-right">{count}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {top_countries.length === 0 && total_scans === 0 && (
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center text-gray-500">
+            No scans yet. Share your QR code to start tracking.
+          </div>
+        )}
+
+        <Link href="/dashboard" className="text-gray-500 hover:text-white text-sm transition-colors">
+          ← Back to Dashboard
+        </Link>
+      </main>
+      <Footer />
+    </div>
+  );
+}
