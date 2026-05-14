@@ -4,7 +4,6 @@ import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@/lib/supabase';
-import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const QRCode = require('qrcode');
@@ -108,7 +107,6 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
-      <Header />
       <main className="flex-1 max-w-5xl mx-auto px-4 py-12 w-full">
 
         {/* Header row */}

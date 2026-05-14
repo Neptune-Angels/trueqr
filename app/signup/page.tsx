@@ -4,7 +4,6 @@ import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createBrowserClient } from '@/lib/supabase';
-import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 function SignupForm() {
@@ -104,7 +103,6 @@ function SignupForm() {
 export default function SignupPage() {
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
-      <Header />
       <Suspense fallback={<main className="flex-1" />}>
         <SignupForm />
       </Suspense>

@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
@@ -15,7 +14,6 @@ export const metadata: Metadata = {
 export default function NoAccountPage() {
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
-      <Header />
       <main className="flex-1 max-w-3xl mx-auto px-4 py-16 w-full">
         <nav className="text-sm text-gray-500 mb-8">
           <Link href="/" className="hover:text-white transition-colors">Home</Link>

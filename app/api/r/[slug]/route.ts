@@ -28,25 +28,23 @@ export async function GET(
     );
   }
 
-  // Increment scan_count asynchronously (fire and forget — don't block the redirect)
-  void supabaseAdmin
-    .from('qr_codes')
-    .update({ scan_count: (qrCode.scan_count ?? 0) + 1 })
-    .eq('id', qrCode.id);
-
-  // Log the scan to qr_scans asynchronously
   const userAgent = request.headers.get('user-agent') ?? undefined;
   const referer = request.headers.get('referer') ?? undefined;
 
-  void supabaseAdmin
-    .from('qr_scans')
-    .insert({
-      qr_code_id: qrCode.id,
-      user_agent: userAgent,
-      referer: referer,
-      // country: can be populated via Vercel edge geo headers (e.g., request.geo?.country)
-    });
+  // Await both DB writes before redirecting — fire-and-forget gets killed by Vercel serverless
+  await Promise.allSettled([
+    supabaseAdmin
+      .from('qr_codes')
+      .update({ scan_count: (qrCode.scan_count ?? 0) + 1 })
+      .eq('id', qrCode.id),
+    supabaseAdmin
+      .from('qr_scans')
+      .insert({
+        qr_code_id: qrCode.id,
+        user_agent: userAgent,
+        referer: referer,
+      }),
+  ]);
 
-  // 302 redirect to destination
   return NextResponse.redirect(qrCode.destination_url, { status: 302 });
 }

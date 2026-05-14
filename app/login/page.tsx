@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@/lib/supabase';
-import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 export default function LoginPage() {
@@ -30,7 +29,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
-      <Header />
       <main className="flex-1 flex items-center justify-center px-4 py-16">
         <div className="w-full max-w-sm">
           <h1 className="text-3xl font-bold mb-2 text-center">Sign in</h1>
