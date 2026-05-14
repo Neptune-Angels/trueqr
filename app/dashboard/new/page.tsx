@@ -350,4 +350,3 @@ export default function NewQRPage() {
     </div>
   );
 }
-```
