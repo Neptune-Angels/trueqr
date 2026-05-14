@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import QRCode from 'qrcode';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const QRCode = require('qrcode');
 
 export default function NewQRCodePage() {
   const [name, setName] = useState('');
