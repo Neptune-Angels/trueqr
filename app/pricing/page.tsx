@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createBrowserClient } from '@/lib/supabase';
 import Footer from '@/components/Footer';
 
 // Note: metadata export is incompatible with 'use client'.
@@ -50,13 +51,28 @@ function FreeCta() {
 function ProCta() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [authed, setAuthed] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const supabase = createBrowserClient();
+    supabase.auth.getUser().then(({ data: { user } }) => setAuthed(!!user));
+  }, []);
 
   async function handleCheckout() {
+    // Require auth before checkout
+    if (!authed) {
+      window.location.href = '/signup?next=/pricing';
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
       const res = await fetch('/api/checkout', { method: 'POST' });
       const data = await res.json();
+      if (res.status === 401) {
+        window.location.href = '/signup?next=/pricing';
+        return;
+      }
       if (data.url) {
         window.location.href = data.url;
       } else {
