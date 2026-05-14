@@ -118,8 +118,24 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
             { onConflict: 'id' }
           );
       } else {
-        // User doesn't exist in auth yet — store metadata for when they sign up
+        // User doesn't exist in auth yet — store a pending record keyed by email
+        // so that when they sign up, we can link and upgrade them automatically.
         console.log(`Checkout completed for unknown user: ${email}, customer: ${customerId}`);
+        await supabaseAdmin
+          .from('pending_upgrades')
+          .upsert(
+            {
+              email,
+              stripe_customer_id: customerId,
+              stripe_subscription_id: subscriptionId,
+              plan: 'pro',
+              created_at: new Date().toISOString(),
+            },
+            { onConflict: 'email' }
+          )
+          .then(({ error }) => {
+            if (error) console.log('pending_upgrades table not yet created, skipping:', error.message);
+          });
       }
     }
   }
