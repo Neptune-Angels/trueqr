@@ -38,31 +38,41 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  let body: { name?: string; destination_url?: string; style_config?: Record<string, string> };
+  let body: { name?: string; destination_url?: string; style_config?: Record<string, string>; landing_config?: Record<string, unknown> };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { destination_url, style_config } = body;
+  const { destination_url: rawDest, style_config, landing_config } = body;
   let { name } = body;
 
-  if (!destination_url) {
+  if (!rawDest) {
     return NextResponse.json(
       { error: 'Missing required field: destination_url' },
       { status: 400 }
     );
   }
 
+  // '__links__' is a sentinel meaning the URL will be set after slug generation
+  const isLinksType = rawDest === '__links__';
+
   // Auto-generate name if not provided
   if (!name) {
-    try { name = new URL(destination_url).hostname.replace(/^www\./, '') || 'QR Code'; }
-    catch { name = 'QR Code'; }
+    if (isLinksType) {
+      const cfg = landing_config as any;
+      name = cfg?.title || 'Links Page';
+    } else {
+      try { name = new URL(rawDest).hostname.replace(/^www\./, '') || 'QR Code'; }
+      catch { name = 'QR Code'; }
+    }
   }
 
-  try { new URL(destination_url); } catch {
-    return NextResponse.json({ error: 'Invalid destination_url' }, { status: 400 });
+  if (!isLinksType) {
+    try { new URL(rawDest); } catch {
+      return NextResponse.json({ error: 'Invalid destination_url' }, { status: 400 });
+    }
   }
 
   // Ensure user record exists in public.users
@@ -79,9 +89,15 @@ export async function POST(request: NextRequest) {
     slug = generateSlug(8);
   }
 
+  const destination_url = isLinksType ? `https://trueqr.co/l/${slug}` : rawDest;
+
   const { data: qrCode, error } = await supabaseAdmin
     .from('qr_codes')
-    .insert({ user_id: user.id, slug, destination_url, name, ...(style_config ? { style_config } : {}) })
+    .insert({
+      user_id: user.id, slug, destination_url, name,
+      ...(style_config   ? { style_config }   : {}),
+      ...(landing_config ? { landing_config } : {}),
+    })
     .select()
     .single();
 

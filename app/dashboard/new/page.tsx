@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import QRCodeFrame, { FRAME_STYLES, type FrameStyle } from '@/components/QRCodeFrame';
 
-type QRType = 'URL' | 'Text' | 'Email' | 'Phone' | 'SMS' | 'WiFi' | 'vCard';
+type QRType = 'URL' | 'Text' | 'Email' | 'Phone' | 'SMS' | 'WiFi' | 'vCard' | 'Links';
 
 const DOT_STYLES = [
   { id: 'square',         label: 'Square' },
@@ -42,6 +42,12 @@ export default function NewQRPage() {
   const [vcEmail,     setVcEmail]     = useState('');
   const [vcCompany,   setVcCompany]   = useState('');
 
+  // Links / social tree
+  const [links,        setLinks]       = useState<{ label: string; url: string }[]>([{ label: '', url: '' }]);
+  const [pageTitle,    setPageTitle]   = useState('');
+  const [pageSubtitle, setPageSubtitle]= useState('');
+  const [accentColor,  setAccentColor] = useState('#10b981');
+
   // Style
   const [dotStyle,    setDotStyle]    = useState('square');
   const [markerStyle, setMarkerStyle] = useState('square');
@@ -60,6 +66,7 @@ export default function NewQRPage() {
       case 'SMS':    return `smsto:${smsPhone}:${smsMsg}`;
       case 'WiFi':   return `WIFI:T:${wifiType};S:${wifiSsid};P:${wifiPass};;`;
       case 'vCard':  return `BEGIN:VCARD\nVERSION:3.0\nFN:${vcName}\nTEL:${vcPhone}\nEMAIL:${vcEmail}\nORG:${vcCompany}\nEND:VCARD`;
+      case 'Links':  return '__links__';
       default:       return '';
     }
   };
@@ -80,6 +87,7 @@ export default function NewQRPage() {
         body: JSON.stringify({
           destination_url,
           style_config: { dotStyle, markerStyle, color, bgColor, frameStyle, frameText, frameColor },
+          ...(qrType === 'Links' ? { landing_config: { title: pageTitle, subtitle: pageSubtitle, accentColor, links: links.filter(l => l.label && l.url) } } : {}),
         }),
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed'); }
@@ -127,7 +135,7 @@ export default function NewQRPage() {
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Type</label>
               <div className="flex flex-wrap gap-2">
-                {(['URL','Text','Email','Phone','SMS','WiFi','vCard'] as QRType[]).map(t => (
+                {(['URL','Text','Email','Phone','SMS','WiFi','vCard','Links'] as QRType[]).map(t => (
                   <button key={t} type="button" onClick={() => setQrType(t)}
                     className={`px-3 py-1.5 rounded text-sm border ${qrType===t ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300' : 'border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-600'}`}>
                     {t}
@@ -181,6 +189,42 @@ export default function NewQRPage() {
                   <input key={ph as string} type="text" value={val as string} onChange={e=>(set as any)(e.target.value)} placeholder={ph as string}
                     className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
                 ))}
+              </div>
+            )}
+
+            {qrType==='Links' && (
+              <div className="space-y-3">
+                <input type="text" value={pageTitle} onChange={e=>setPageTitle(e.target.value)} placeholder="Page title (e.g. John's Links)"
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                <input type="text" value={pageSubtitle} onChange={e=>setPageSubtitle(e.target.value)} placeholder="Subtitle (optional)"
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                <div className="flex items-center gap-3">
+                  <label className="text-sm text-gray-300 shrink-0">Button color</label>
+                  <input type="color" value={accentColor} onChange={e=>setAccentColor(e.target.value)}
+                    className="w-12 h-9 rounded border border-gray-700 bg-gray-900 cursor-pointer" />
+                </div>
+                <div className="space-y-2">
+                  {links.map((link, i) => (
+                    <div key={i} className="flex gap-2">
+                      <input type="text" value={link.label} placeholder="Label"
+                        onChange={e => setLinks(links.map((l,j) => j===i ? {...l, label: e.target.value} : l))}
+                        className="flex-1 px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                      <input type="url" value={link.url} placeholder="https://"
+                        onChange={e => setLinks(links.map((l,j) => j===i ? {...l, url: e.target.value} : l))}
+                        className="flex-1 px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                      {links.length > 1 && (
+                        <button type="button" onClick={() => setLinks(links.filter((_,j) => j!==i))}
+                          className="px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded text-gray-400">×</button>
+                      )}
+                    </div>
+                  ))}
+                  {links.length < 10 && (
+                    <button type="button" onClick={() => setLinks([...links, {label:'',url:''}])}
+                      className="w-full py-2 border border-dashed border-gray-700 hover:border-emerald-500 rounded text-gray-500 hover:text-emerald-300 text-sm">
+                      + Add link
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 
