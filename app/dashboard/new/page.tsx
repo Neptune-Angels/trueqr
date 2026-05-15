@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import QRCodeStyled from '@/components/QRCodeStyled';
+import QRCodeFrame, { FRAME_STYLES, type FrameStyle } from '@/components/QRCodeFrame';
 
 type QRType = 'URL' | 'Text' | 'Email' | 'Phone' | 'SMS' | 'WiFi' | 'vCard';
 
@@ -47,6 +47,9 @@ export default function NewQRPage() {
   const [markerStyle, setMarkerStyle] = useState('square');
   const [color,       setColor]       = useState('#000000');
   const [bgColor,     setBgColor]     = useState('#ffffff');
+  const [frameStyle,  setFrameStyle]  = useState<FrameStyle>('none');
+  const [frameText,   setFrameText]   = useState('SCAN ME');
+  const [frameColor,  setFrameColor]  = useState('#10b981');
 
   const buildContent = (): string => {
     switch (qrType) {
@@ -76,7 +79,7 @@ export default function NewQRPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           destination_url,
-          style_config: { dotStyle, markerStyle, color, bgColor },
+          style_config: { dotStyle, markerStyle, color, bgColor, frameStyle, frameText, frameColor },
         }),
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed'); }
@@ -96,9 +99,9 @@ export default function NewQRPage() {
           <h1 className="text-2xl font-bold mb-6">QR Code Created!</h1>
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 flex flex-col items-center gap-4">
             <div className="bg-white p-3 rounded-lg">
-              <QRCodeStyled
+              <QRCodeFrame
                 url={`https://trueqr.co/r/${createdQR.slug}`}
-                styleConfig={{ dotStyle, markerStyle, color, bgColor }}
+                styleConfig={{ dotStyle, markerStyle, color, bgColor, frameStyle, frameText, frameColor }}
                 size={220}
               />
             </div>
@@ -221,6 +224,39 @@ export default function NewQRPage() {
               </div>
             </div>
 
+            {/* Frame style */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Frame</label>
+              <div className="grid grid-cols-3 gap-2">
+                {FRAME_STYLES.map(s => (
+                  <button key={s.id} type="button" onClick={() => setFrameStyle(s.id as FrameStyle)}
+                    className={`px-2 py-2 rounded text-xs border ${
+                      frameStyle === s.id
+                        ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300'
+                        : 'border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-600'
+                    }`}>
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {frameStyle !== 'none' && (
+              <div className="grid grid-cols-[1fr_auto] gap-3 items-end">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Frame Text</label>
+                  <input type="text" value={frameText} onChange={e => setFrameText(e.target.value)}
+                    placeholder="SCAN ME" maxLength={24}
+                    className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Frame Color</label>
+                  <input type="color" value={frameColor} onChange={e => setFrameColor(e.target.value)}
+                    className="w-12 h-10 rounded border border-gray-700 bg-gray-900 cursor-pointer" />
+                </div>
+              </div>
+            )}
+
             {error && <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/30 px-3 py-2 rounded">{error}</p>}
 
             <button type="submit" disabled={loading}
@@ -234,7 +270,7 @@ export default function NewQRPage() {
             <div className="text-sm font-medium text-gray-300 mb-2">Live Preview</div>
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center justify-center sticky top-8">
               <div className="bg-white p-2 rounded">
-                <QRCodeStyled url={previewUrl} styleConfig={{ dotStyle, markerStyle, color, bgColor }} size={220} />
+                <QRCodeFrame url={previewUrl} styleConfig={{ dotStyle, markerStyle, color, bgColor, frameStyle, frameText, frameColor }} size={220} />
               </div>
             </div>
           </div>
