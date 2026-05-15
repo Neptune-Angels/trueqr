@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import QRCodeFrame, { FRAME_STYLES, type FrameStyle } from '@/components/QRCodeFrame';
 
-type QRType = 'URL' | 'Text' | 'Email' | 'Phone' | 'SMS' | 'WiFi' | 'vCard' | 'Links';
+type QRType = 'URL' | 'Text' | 'Email' | 'Phone' | 'SMS' | 'WiFi' | 'vCard' | 'Links' | 'Business';
 
 const DOT_STYLES = [
   { id: 'square',         label: 'Square' },
@@ -48,6 +48,17 @@ export default function NewQRPage() {
   const [pageSubtitle, setPageSubtitle]= useState('');
   const [accentColor,  setAccentColor] = useState('#10b981');
 
+  // Business page
+  const [bizName,    setBizName]    = useState('');
+  const [bizTagline, setBizTagline] = useState('');
+  const [bizPhone,   setBizPhone]   = useState('');
+  const [bizEmail,   setBizEmail]   = useState('');
+  const [bizWebsite, setBizWebsite] = useState('');
+  const [bizAddress, setBizAddress] = useState('');
+  const [bizMenuUrl, setBizMenuUrl] = useState('');
+  const [bizAccent,  setBizAccent]  = useState('#10b981');
+  const [bizHours,   setBizHours]   = useState<{ day: string; time: string }[]>([{ day: '', time: '' }]);
+
   // Style
   const [dotStyle,    setDotStyle]    = useState('square');
   const [markerStyle, setMarkerStyle] = useState('square');
@@ -66,8 +77,9 @@ export default function NewQRPage() {
       case 'SMS':    return `smsto:${smsPhone}:${smsMsg}`;
       case 'WiFi':   return `WIFI:T:${wifiType};S:${wifiSsid};P:${wifiPass};;`;
       case 'vCard':  return `BEGIN:VCARD\nVERSION:3.0\nFN:${vcName}\nTEL:${vcPhone}\nEMAIL:${vcEmail}\nORG:${vcCompany}\nEND:VCARD`;
-      case 'Links':  return '__links__';
-      default:       return '';
+      case 'Links':    return '__links__';
+      case 'Business':  return '__links__';
+      default:          return '';
     }
   };
 
@@ -87,7 +99,8 @@ export default function NewQRPage() {
         body: JSON.stringify({
           destination_url,
           style_config: { dotStyle, markerStyle, color, bgColor, frameStyle, frameText, frameColor },
-          ...(qrType === 'Links' ? { landing_config: { title: pageTitle, subtitle: pageSubtitle, accentColor, links: links.filter(l => l.label && l.url) } } : {}),
+          ...(qrType === 'Links'    ? { landing_config: { title: pageTitle, subtitle: pageSubtitle, accentColor, links: links.filter(l => l.label && l.url) } } : {}),
+          ...(qrType === 'Business' ? { landing_config: { type: 'business', businessName: bizName, tagline: bizTagline, phone: bizPhone, email: bizEmail, website: bizWebsite, address: bizAddress, menuUrl: bizMenuUrl, hours: bizHours.filter(h => h.day && h.time), accentColor: bizAccent } } : {}),
         }),
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed'); }
@@ -135,7 +148,7 @@ export default function NewQRPage() {
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Type</label>
               <div className="flex flex-wrap gap-2">
-                {(['URL','Text','Email','Phone','SMS','WiFi','vCard','Links'] as QRType[]).map(t => (
+                {(['URL','Text','Email','Phone','SMS','WiFi','vCard','Links','Business'] as QRType[]).map(t => (
                   <button key={t} type="button" onClick={() => setQrType(t)}
                     className={`px-3 py-1.5 rounded text-sm border ${qrType===t ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300' : 'border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-600'}`}>
                     {t}
@@ -224,6 +237,55 @@ export default function NewQRPage() {
                       + Add link
                     </button>
                   )}
+                </div>
+              </div>
+            )}
+
+            {qrType==='Business' && (
+              <div className="space-y-3">
+                <input type="text" value={bizName} onChange={e=>setBizName(e.target.value)} placeholder="Business name *" required
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                <input type="text" value={bizTagline} onChange={e=>setBizTagline(e.target.value)} placeholder="Tagline (optional)"
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                <input type="tel" value={bizPhone} onChange={e=>setBizPhone(e.target.value)} placeholder="Phone"
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                <input type="email" value={bizEmail} onChange={e=>setBizEmail(e.target.value)} placeholder="Email"
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                <input type="url" value={bizWebsite} onChange={e=>setBizWebsite(e.target.value)} placeholder="Website (https://)"
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                <textarea value={bizAddress} onChange={e=>setBizAddress(e.target.value)} placeholder="Address" rows={2}
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                <input type="url" value={bizMenuUrl} onChange={e=>setBizMenuUrl(e.target.value)} placeholder="Menu URL (optional)"
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                <div className="flex items-center gap-3">
+                  <label className="text-sm text-gray-300 shrink-0">Brand color</label>
+                  <input type="color" value={bizAccent} onChange={e=>setBizAccent(e.target.value)}
+                    className="w-12 h-9 rounded border border-gray-700 bg-gray-900 cursor-pointer" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Hours</label>
+                  <div className="space-y-2">
+                    {bizHours.map((h, i) => (
+                      <div key={i} className="flex gap-2">
+                        <input type="text" value={h.day} placeholder="Day (e.g. Mon-Fri)"
+                          onChange={e => setBizHours(bizHours.map((r,j) => j===i ? {...r, day: e.target.value} : r))}
+                          className="flex-1 px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                        <input type="text" value={h.time} placeholder="e.g. 9am-5pm"
+                          onChange={e => setBizHours(bizHours.map((r,j) => j===i ? {...r, time: e.target.value} : r))}
+                          className="flex-1 px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                        {bizHours.length > 1 && (
+                          <button type="button" onClick={() => setBizHours(bizHours.filter((_,j) => j!==i))}
+                            className="px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded text-gray-400">×</button>
+                        )}
+                      </div>
+                    ))}
+                    {bizHours.length < 7 && (
+                      <button type="button" onClick={() => setBizHours([...bizHours, {day:'',time:''}])}
+                        className="w-full py-2 border border-dashed border-gray-700 hover:border-emerald-500 rounded text-gray-500 hover:text-emerald-300 text-sm">
+                        + Add hours row
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
