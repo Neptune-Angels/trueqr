@@ -21,17 +21,18 @@ export async function GET(
     return NextResponse.json({ error: 'This QR code is no longer active' }, { status: 410 });
   }
 
-  // Log scan asynchronously
-  void supabaseAdmin
-    .from('qr_codes')
-    .update({ scan_count: (qrCode.scan_count ?? 0) + 1 })
-    .eq('id', qrCode.id);
-
-  void supabaseAdmin.from('qr_scans').insert({
-    qr_code_id: qrCode.id,
-    user_agent: request.headers.get('user-agent') ?? undefined,
-    referer: request.headers.get('referer') ?? undefined,
-  });
+  // Await writes — fire-and-forget void gets killed by Vercel serverless before completing
+  await Promise.allSettled([
+    supabaseAdmin
+      .from('qr_codes')
+      .update({ scan_count: (qrCode.scan_count ?? 0) + 1 })
+      .eq('id', qrCode.id),
+    supabaseAdmin.from('qr_scans').insert({
+      qr_code_id: qrCode.id,
+      user_agent: request.headers.get('user-agent') ?? undefined,
+      referer: request.headers.get('referer') ?? undefined,
+    }),
+  ]);
 
   return NextResponse.redirect(qrCode.destination_url, { status: 302 });
 }
