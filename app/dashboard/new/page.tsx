@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import QRCodeFrame, { FRAME_STYLES, type FrameStyle } from '@/components/QRCodeFrame';
 
-type QRType = 'URL' | 'Text' | 'Email' | 'Phone' | 'SMS' | 'WiFi' | 'vCard' | 'Links' | 'Business';
+type QRType = 'URL' | 'Text' | 'Email' | 'Phone' | 'SMS' | 'WiFi' | 'vCard' | 'Links' | 'Business' | 'PDF' | 'Gallery';
 
 const DOT_STYLES = [
   { id: 'square',         label: 'Square' },
@@ -48,6 +48,15 @@ export default function NewQRPage() {
   const [pageSubtitle, setPageSubtitle]= useState('');
   const [accentColor,  setAccentColor] = useState('#10b981');
 
+  // PDF / Gallery uploads
+  const [pdfFile,      setPdfFile]      = useState<File | null>(null);
+  const [pdfTitle,     setPdfTitle]     = useState('');
+  const [pdfDesc,      setPdfDesc]      = useState('');
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+  const [galleryTitle, setGalleryTitle] = useState('');
+  const [galleryDesc,  setGalleryDesc]  = useState('');
+  const [uploading,    setUploading]    = useState(false);
+
   // Business page
   const [bizName,    setBizName]    = useState('');
   const [bizTagline, setBizTagline] = useState('');
@@ -79,11 +88,21 @@ export default function NewQRPage() {
       case 'vCard':  return `BEGIN:VCARD\nVERSION:3.0\nFN:${vcName}\nTEL:${vcPhone}\nEMAIL:${vcEmail}\nORG:${vcCompany}\nEND:VCARD`;
       case 'Links':    return '__links__';
       case 'Business':  return '__links__';
-      default:          return '';
+      case 'PDF':        return '__links__';
+      case 'Gallery':    return '__links__';
+      default:           return '';
     }
   };
 
   const previewUrl = buildContent() || 'https://trueqr.co';
+
+  const uploadFile = async (file: File): Promise<string> => {
+    const fd = new FormData();
+    fd.append('file', file);
+    const r = await fetch('/api/upload', { method: 'POST', body: fd });
+    if (!r.ok) { const d = await r.json(); throw new Error(d.error || 'Upload failed'); }
+    return (await r.json()).url;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,14 +112,33 @@ export default function NewQRPage() {
     if (!destination_url) { setError('Fill in the required fields'); setLoading(false); return; }
 
     try {
+      let landing_config: Record<string, unknown> | undefined;
+
+      if (qrType === 'PDF') {
+        if (!pdfFile) { setError('Select a PDF file'); setLoading(false); return; }
+        setUploading(true);
+        const fileUrl = await uploadFile(pdfFile);
+        setUploading(false);
+        landing_config = { type: 'pdf', title: pdfTitle, description: pdfDesc, fileUrl };
+      } else if (qrType === 'Gallery') {
+        if (!galleryFiles.length) { setError('Select at least one image'); setLoading(false); return; }
+        setUploading(true);
+        const images = await Promise.all(galleryFiles.map(uploadFile));
+        setUploading(false);
+        landing_config = { type: 'gallery', title: galleryTitle, description: galleryDesc, images };
+      } else if (qrType === 'Links') {
+        landing_config = { title: pageTitle, subtitle: pageSubtitle, accentColor, links: links.filter(l => l.label && l.url) };
+      } else if (qrType === 'Business') {
+        landing_config = { type: 'business', businessName: bizName, tagline: bizTagline, phone: bizPhone, email: bizEmail, website: bizWebsite, address: bizAddress, menuUrl: bizMenuUrl, hours: bizHours.filter(h => h.day && h.time), accentColor: bizAccent };
+      }
+
       const res = await fetch('/api/qr', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           destination_url,
           style_config: { dotStyle, markerStyle, color, bgColor, frameStyle, frameText, frameColor },
-          ...(qrType === 'Links'    ? { landing_config: { title: pageTitle, subtitle: pageSubtitle, accentColor, links: links.filter(l => l.label && l.url) } } : {}),
-          ...(qrType === 'Business' ? { landing_config: { type: 'business', businessName: bizName, tagline: bizTagline, phone: bizPhone, email: bizEmail, website: bizWebsite, address: bizAddress, menuUrl: bizMenuUrl, hours: bizHours.filter(h => h.day && h.time), accentColor: bizAccent } } : {}),
+          ...(landing_config ? { landing_config } : {}),
         }),
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed'); }
@@ -110,6 +148,7 @@ export default function NewQRPage() {
       setError(err.message);
     } finally {
       setLoading(false);
+      setUploading(false);
     }
   };
 
@@ -148,7 +187,7 @@ export default function NewQRPage() {
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Type</label>
               <div className="flex flex-wrap gap-2">
-                {(['URL','Text','Email','Phone','SMS','WiFi','vCard','Links','Business'] as QRType[]).map(t => (
+                {(['URL','Text','Email','Phone','SMS','WiFi','vCard','Links','Business','PDF','Gallery'] as QRType[]).map(t => (
                   <button key={t} type="button" onClick={() => setQrType(t)}
                     className={`px-3 py-1.5 rounded text-sm border ${qrType===t ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300' : 'border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-600'}`}>
                     {t}
@@ -287,6 +326,40 @@ export default function NewQRPage() {
                     )}
                   </div>
                 </div>
+              </div>
+            )}
+
+            {qrType==='PDF' && (
+              <div className="space-y-3">
+                <input type="text" value={pdfTitle} onChange={e=>setPdfTitle(e.target.value)} placeholder="Title (optional)"
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                <textarea value={pdfDesc} onChange={e=>setPdfDesc(e.target.value)} rows={2} placeholder="Description (optional)"
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                <label className="block">
+                  <span className="text-sm text-gray-300 mb-2 block">PDF File *</span>
+                  <input type="file" accept=".pdf,application/pdf"
+                    onChange={e => setPdfFile(e.target.files?.[0] ?? null)}
+                    className="block w-full text-sm text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded file:border-0 file:bg-emerald-600 file:text-white hover:file:bg-emerald-500" />
+                  {pdfFile && <p className="mt-1 text-xs text-gray-500">{pdfFile.name}</p>}
+                </label>
+                {uploading && <p className="text-xs text-emerald-400">Uploading…</p>}
+              </div>
+            )}
+
+            {qrType==='Gallery' && (
+              <div className="space-y-3">
+                <input type="text" value={galleryTitle} onChange={e=>setGalleryTitle(e.target.value)} placeholder="Gallery title (optional)"
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                <textarea value={galleryDesc} onChange={e=>setGalleryDesc(e.target.value)} rows={2} placeholder="Description (optional)"
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                <label className="block">
+                  <span className="text-sm text-gray-300 mb-2 block">Images * (up to 20)</span>
+                  <input type="file" accept="image/*" multiple
+                    onChange={e => setGalleryFiles(Array.from(e.target.files ?? []).slice(0, 20))}
+                    className="block w-full text-sm text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded file:border-0 file:bg-emerald-600 file:text-white hover:file:bg-emerald-500" />
+                  {galleryFiles.length > 0 && <p className="mt-1 text-xs text-gray-500">{galleryFiles.length} image{galleryFiles.length !== 1 ? 's' : ''} selected</p>}
+                </label>
+                {uploading && <p className="text-xs text-emerald-400">Uploading…</p>}
               </div>
             )}
 

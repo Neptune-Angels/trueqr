@@ -28,7 +28,9 @@ type BusinessLandingConfig = {
   bgColor?: string;
 };
 
-type LandingConfig = LinksLandingConfig | BusinessLandingConfig;
+type PdfLandingConfig = { type: 'pdf'; title?: string; description?: string; fileUrl: string; accentColor?: string; bgColor?: string };
+type GalleryLandingConfig = { type: 'gallery'; title?: string; description?: string; images: string[]; accentColor?: string; bgColor?: string };
+type LandingConfig = LinksLandingConfig | BusinessLandingConfig | PdfLandingConfig | GalleryLandingConfig;
 
 async function fetchQR(slug: string) {
   const { data } = await supabaseAdmin
@@ -113,6 +115,50 @@ function BusinessPage({ config }: { config: BusinessLandingConfig }) {
   );
 }
 
+function PdfPage({ config }: { config: PdfLandingConfig }) {
+  const accent = config.accentColor || '#10b981';
+  const bg     = config.bgColor     || '#0d0d1a';
+  return (
+    <main className="min-h-screen flex flex-col items-center px-6 py-10" style={{ backgroundColor: bg }}>
+      <div className="w-full max-w-3xl flex flex-col items-center">
+        {config.title && <h1 className="text-3xl font-bold text-white text-center mb-2">{config.title}</h1>}
+        {config.description && <p className="text-gray-400 text-center mb-6 max-w-xl">{config.description}</p>}
+        <div className="w-full rounded-xl overflow-hidden border border-gray-800 bg-gray-900 mb-4" style={{ height: '70vh' }}>
+          <iframe src={config.fileUrl} className="w-full h-full" title={config.title || 'PDF'} />
+        </div>
+        <a href={config.fileUrl} target="_blank" rel="noopener noreferrer"
+          className="px-6 py-3 rounded-xl font-semibold text-white hover:opacity-90 transition"
+          style={{ backgroundColor: accent }}>
+          Open PDF
+        </a>
+        <p className="text-gray-700 text-xs mt-6">Powered by TrueQR</p>
+      </div>
+    </main>
+  );
+}
+
+function GalleryPage({ config }: { config: GalleryLandingConfig }) {
+  const accent = config.accentColor || '#10b981';
+  const bg     = config.bgColor     || '#0d0d1a';
+  return (
+    <main className="min-h-screen flex flex-col items-center px-4 py-10" style={{ backgroundColor: bg }}>
+      <div className="w-full max-w-2xl">
+        {config.title && <h1 className="text-3xl font-bold text-white text-center mb-2" style={{ color: accent }}>{config.title}</h1>}
+        {config.description && <p className="text-gray-400 text-center mb-6">{config.description}</p>}
+        <div className="grid grid-cols-2 gap-2">
+          {(config.images || []).map((src, i) => (
+            <a key={i} href={src} target="_blank" rel="noopener noreferrer"
+              className="block aspect-square rounded-xl overflow-hidden bg-gray-900 hover:opacity-90 transition">
+              <img src={src} alt={`Image ${i+1}`} className="w-full h-full object-cover" />
+            </a>
+          ))}
+        </div>
+        <p className="text-gray-700 text-xs text-center mt-8">Powered by TrueQR</p>
+      </div>
+    </main>
+  );
+}
+
 export default async function LinkLandingPage(
   { params }: { params: Promise<{ slug: string }> }
 ) {
@@ -128,7 +174,9 @@ export default async function LinkLandingPage(
     .eq('id', qr.id)
     .then(() => {});
 
-  if (config.type === 'business') return <BusinessPage config={config} />;
+  if (config.type === 'business') return <BusinessPage config={config as BusinessLandingConfig} />;
+  if (config.type === 'pdf')      return <PdfPage      config={config as PdfLandingConfig} />;
+  if (config.type === 'gallery')  return <GalleryPage  config={config as GalleryLandingConfig} />;
 
   const linksCfg = config as LinksLandingConfig;
   const bg     = linksCfg.bgColor    || '#0d0d1a';
