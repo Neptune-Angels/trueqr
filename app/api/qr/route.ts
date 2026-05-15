@@ -38,20 +38,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  let body: { name?: string; destination_url?: string };
+  let body: { name?: string; destination_url?: string; style_config?: Record<string, string> };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { name, destination_url } = body;
+  const { destination_url, style_config } = body;
+  let { name } = body;
 
-  if (!name || !destination_url) {
+  if (!destination_url) {
     return NextResponse.json(
-      { error: 'Missing required fields: name, destination_url' },
+      { error: 'Missing required field: destination_url' },
       { status: 400 }
     );
+  }
+
+  // Auto-generate name if not provided
+  if (!name) {
+    try { name = new URL(destination_url).hostname.replace(/^www\./, '') || 'QR Code'; }
+    catch { name = 'QR Code'; }
   }
 
   try { new URL(destination_url); } catch {
@@ -74,7 +81,7 @@ export async function POST(request: NextRequest) {
 
   const { data: qrCode, error } = await supabaseAdmin
     .from('qr_codes')
-    .insert({ user_id: user.id, slug, destination_url, name })
+    .insert({ user_id: user.id, slug, destination_url, name, ...(style_config ? { style_config } : {}) })
     .select()
     .single();
 
