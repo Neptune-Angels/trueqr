@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import QRCodeFrame, { FRAME_STYLES, type FrameStyle } from '@/components/QRCodeFrame';
 
-type QRType = 'URL' | 'Text' | 'Email' | 'Phone' | 'SMS' | 'WiFi' | 'vCard' | 'Links' | 'Business' | 'PDF' | 'Gallery';
+type QRType = 'URL' | 'Text' | 'Email' | 'Phone' | 'SMS' | 'WiFi' | 'vCard' | 'Links' | 'Business' | 'PDF' | 'Gallery' | 'Event' | 'Coupon';
 
 const DOT_STYLES = [
   { id: 'square',         label: 'Square' },
@@ -57,6 +57,24 @@ export default function NewQRPage() {
   const [galleryDesc,  setGalleryDesc]  = useState('');
   const [uploading,    setUploading]    = useState(false);
 
+  // Event
+  const [evtTitle,    setEvtTitle]    = useState('');
+  const [evtDate,     setEvtDate]     = useState('');
+  const [evtTime,     setEvtTime]     = useState('');
+  const [evtLocation, setEvtLocation] = useState('');
+  const [evtDesc,     setEvtDesc]     = useState('');
+  const [evtCta,      setEvtCta]      = useState('');
+  const [evtCtaUrl,   setEvtCtaUrl]   = useState('');
+  const [evtAccent,   setEvtAccent]   = useState('#10b981');
+
+  // Coupon
+  const [cpnTitle,    setCpnTitle]    = useState('');
+  const [cpnCode,     setCpnCode]     = useState('');
+  const [cpnDiscount, setCpnDiscount] = useState('');
+  const [cpnDesc,     setCpnDesc]     = useState('');
+  const [cpnExpiry,   setCpnExpiry]   = useState('');
+  const [cpnAccent,   setCpnAccent]   = useState('#10b981');
+
   // Business page
   const [bizName,    setBizName]    = useState('');
   const [bizTagline, setBizTagline] = useState('');
@@ -90,6 +108,8 @@ export default function NewQRPage() {
       case 'Business':  return '__links__';
       case 'PDF':        return '__links__';
       case 'Gallery':    return '__links__';
+      case 'Event':      return '__links__';
+      case 'Coupon':     return '__links__';
       default:           return '';
     }
   };
@@ -130,6 +150,10 @@ export default function NewQRPage() {
         landing_config = { title: pageTitle, subtitle: pageSubtitle, accentColor, links: links.filter(l => l.label && l.url) };
       } else if (qrType === 'Business') {
         landing_config = { type: 'business', businessName: bizName, tagline: bizTagline, phone: bizPhone, email: bizEmail, website: bizWebsite, address: bizAddress, menuUrl: bizMenuUrl, hours: bizHours.filter(h => h.day && h.time), accentColor: bizAccent };
+      } else if (qrType === 'Event') {
+        landing_config = { type: 'event', title: evtTitle, date: evtDate, time: evtTime, location: evtLocation, description: evtDesc, ctaLabel: evtCta, ctaUrl: evtCtaUrl, accentColor: evtAccent };
+      } else if (qrType === 'Coupon') {
+        landing_config = { type: 'coupon', title: cpnTitle, code: cpnCode, discount: cpnDiscount, description: cpnDesc, expiresAt: cpnExpiry, accentColor: cpnAccent };
       }
 
       const res = await fetch('/api/qr', {
@@ -187,7 +211,7 @@ export default function NewQRPage() {
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Type</label>
               <div className="flex flex-wrap gap-2">
-                {(['URL','Text','Email','Phone','SMS','WiFi','vCard','Links','Business','PDF','Gallery'] as QRType[]).map(t => (
+                {(['URL','Text','Email','Phone','SMS','WiFi','vCard','Links','Business','PDF','Gallery','Event','Coupon'] as QRType[]).map(t => (
                   <button key={t} type="button" onClick={() => setQrType(t)}
                     className={`px-3 py-1.5 rounded text-sm border ${qrType===t ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300' : 'border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-600'}`}>
                     {t}
@@ -325,6 +349,55 @@ export default function NewQRPage() {
                       </button>
                     )}
                   </div>
+                </div>
+              </div>
+            )}
+
+            {qrType==='Event' && (
+              <div className="space-y-3">
+                <input type="text" value={evtTitle} onChange={e=>setEvtTitle(e.target.value)} placeholder="Event title *"
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                <div className="grid grid-cols-2 gap-2">
+                  <input type="date" value={evtDate} onChange={e=>setEvtDate(e.target.value)}
+                    className="px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                  <input type="time" value={evtTime} onChange={e=>setEvtTime(e.target.value)}
+                    className="px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                </div>
+                <input type="text" value={evtLocation} onChange={e=>setEvtLocation(e.target.value)} placeholder="Location"
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                <textarea value={evtDesc} onChange={e=>setEvtDesc(e.target.value)} rows={3} placeholder="Description"
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                <div className="grid grid-cols-2 gap-2">
+                  <input type="text" value={evtCta} onChange={e=>setEvtCta(e.target.value)} placeholder="Button label (e.g. RSVP)"
+                    className="px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                  <input type="url" value={evtCtaUrl} onChange={e=>setEvtCtaUrl(e.target.value)} placeholder="Button URL"
+                    className="px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                </div>
+                <div className="flex items-center gap-3">
+                  <label className="text-sm text-gray-300 shrink-0">Accent color</label>
+                  <input type="color" value={evtAccent} onChange={e=>setEvtAccent(e.target.value)} className="w-12 h-9 rounded border border-gray-700 bg-gray-900 cursor-pointer" />
+                </div>
+              </div>
+            )}
+
+            {qrType==='Coupon' && (
+              <div className="space-y-3">
+                <input type="text" value={cpnTitle} onChange={e=>setCpnTitle(e.target.value)} placeholder="Offer title *"
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                <div className="grid grid-cols-2 gap-2">
+                  <input type="text" value={cpnCode} onChange={e=>setCpnCode(e.target.value.toUpperCase())} placeholder="PROMO CODE"
+                    className="px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white font-mono focus:border-emerald-500 outline-none" />
+                  <input type="text" value={cpnDiscount} onChange={e=>setCpnDiscount(e.target.value)} placeholder="e.g. 20% OFF"
+                    className="px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                </div>
+                <textarea value={cpnDesc} onChange={e=>setCpnDesc(e.target.value)} rows={2} placeholder="Description / terms"
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                <div className="flex items-center gap-3">
+                  <label className="text-sm text-gray-300 shrink-0">Expires</label>
+                  <input type="date" value={cpnExpiry} onChange={e=>setCpnExpiry(e.target.value)}
+                    className="flex-1 px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+                  <label className="text-sm text-gray-300 shrink-0">Color</label>
+                  <input type="color" value={cpnAccent} onChange={e=>setCpnAccent(e.target.value)} className="w-12 h-9 rounded border border-gray-700 bg-gray-900 cursor-pointer" />
                 </div>
               </div>
             )}

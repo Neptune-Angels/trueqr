@@ -30,7 +30,9 @@ type BusinessLandingConfig = {
 
 type PdfLandingConfig = { type: 'pdf'; title?: string; description?: string; fileUrl: string; accentColor?: string; bgColor?: string };
 type GalleryLandingConfig = { type: 'gallery'; title?: string; description?: string; images: string[]; accentColor?: string; bgColor?: string };
-type LandingConfig = LinksLandingConfig | BusinessLandingConfig | PdfLandingConfig | GalleryLandingConfig;
+type EventLandingConfig  = { type: 'event';  title: string; date?: string; time?: string; location?: string; description?: string; ctaLabel?: string; ctaUrl?: string; accentColor?: string; bgColor?: string };
+type CouponLandingConfig = { type: 'coupon'; title: string; code: string; discount?: string; description?: string; expiresAt?: string; accentColor?: string; bgColor?: string };
+type LandingConfig = LinksLandingConfig | BusinessLandingConfig | PdfLandingConfig | GalleryLandingConfig | EventLandingConfig | CouponLandingConfig;
 
 async function fetchQR(slug: string) {
   const { data } = await supabaseAdmin
@@ -115,6 +117,70 @@ function BusinessPage({ config }: { config: BusinessLandingConfig }) {
   );
 }
 
+function EventPage({ config }: { config: EventLandingConfig }) {
+  const accent = config.accentColor || '#10b981';
+  const bg     = config.bgColor     || '#030712';
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: bg }}>
+      <div className="w-full max-w-md bg-gray-900 rounded-2xl overflow-hidden shadow-2xl border border-gray-800">
+        <div className="px-6 py-8 text-white" style={{ backgroundColor: accent }}>
+          <h1 className="text-2xl font-bold leading-tight">{config.title}</h1>
+        </div>
+        <div className="p-6 space-y-5">
+          {(config.date || config.time) && (
+            <div className="flex items-start gap-3 text-gray-200">
+              <span style={{ color: accent }}>📅</span>
+              <div className="text-sm">
+                {config.date && <div className="font-medium">{config.date}</div>}
+                {config.time && <div className="text-gray-400">{config.time}</div>}
+              </div>
+            </div>
+          )}
+          {config.location && (
+            <div className="flex items-start gap-3 text-gray-200">
+              <span style={{ color: accent }}>📍</span>
+              <div className="text-sm">{config.location}</div>
+            </div>
+          )}
+          {config.description && <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">{config.description}</p>}
+          {config.ctaUrl && (
+            <a href={config.ctaUrl} target="_blank" rel="noopener noreferrer"
+              className="block w-full text-center py-3 rounded-lg font-semibold text-white hover:opacity-90 transition"
+              style={{ backgroundColor: accent }}>
+              {config.ctaLabel || 'Learn More'}
+            </a>
+          )}
+          <p className="text-gray-700 text-xs text-center">Powered by TrueQR</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CouponPage({ config }: { config: CouponLandingConfig }) {
+  const accent = config.accentColor || '#10b981';
+  const bg     = config.bgColor     || '#030712';
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: bg }}>
+      <div className="w-full max-w-md bg-gray-900 rounded-2xl overflow-hidden shadow-2xl border border-gray-800 p-8">
+        <div className="text-center space-y-2">
+          <h1 className="text-xl font-medium text-gray-300">{config.title}</h1>
+          {config.discount && <div className="text-5xl font-extrabold tracking-tight" style={{ color: accent }}>{config.discount}</div>}
+        </div>
+        <div className="my-8 border-2 border-dashed rounded-lg p-5 text-center" style={{ borderColor: accent }}>
+          <div className="text-xs uppercase tracking-wider text-gray-500 mb-2">Promo Code</div>
+          <div className="text-2xl font-mono font-bold text-white select-all">{config.code}</div>
+          <div className="text-xs text-gray-500 mt-2">Tap to copy</div>
+        </div>
+        {config.description && <p className="text-gray-300 text-sm leading-relaxed text-center mb-4">{config.description}</p>}
+        {config.expiresAt && <p className="text-xs text-gray-500 text-center mb-6">Expires: {config.expiresAt}</p>}
+        <div className="block w-full text-center py-3 rounded-lg font-semibold text-white" style={{ backgroundColor: accent }}>Redeem Offer</div>
+        <p className="text-gray-700 text-xs text-center mt-4">Powered by TrueQR</p>
+      </div>
+    </div>
+  );
+}
+
 function PdfPage({ config }: { config: PdfLandingConfig }) {
   const accent = config.accentColor || '#10b981';
   const bg     = config.bgColor     || '#0d0d1a';
@@ -177,6 +243,8 @@ export default async function LinkLandingPage(
   if (config.type === 'business') return <BusinessPage config={config as BusinessLandingConfig} />;
   if (config.type === 'pdf')      return <PdfPage      config={config as PdfLandingConfig} />;
   if (config.type === 'gallery')  return <GalleryPage  config={config as GalleryLandingConfig} />;
+  if (config.type === 'event')    return <EventPage    config={config as EventLandingConfig} />;
+  if (config.type === 'coupon')   return <CouponPage   config={config as CouponLandingConfig} />;
 
   const linksCfg = config as LinksLandingConfig;
   const bg     = linksCfg.bgColor    || '#0d0d1a';
