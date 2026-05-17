@@ -20,6 +20,38 @@ const MARKER_STYLES = [
   { id: 'dot',           label: 'Dot' },
 ];
 
+function DotStylePreview({ id }: { id: string }) {
+  const N = 5, CELL = 7, S = 5, PAD = 1;
+  const modules: [number, number][] = [];
+  for (let r = 0; r < N; r++)
+    for (let c = 0; c < N; c++)
+      modules.push([c * CELL + PAD, r * CELL + PAD]);
+  const rxMap: Record<string, number> = { square: 0, rounded: 1, dots: 2.5, classy: 1.2, 'classy-rounded': 2, 'extra-rounded': 2.5 };
+  const rx = rxMap[id] ?? 0;
+  const isCircle = id === 'dots';
+  return (
+    <svg width={35} height={35} viewBox="0 0 35 35" className="shrink-0">
+      {modules.map(([x, y], i) =>
+        isCircle
+          ? <circle key={i} cx={x + S / 2} cy={y + S / 2} r={S / 2} fill="currentColor" />
+          : <rect key={i} x={x} y={y} width={S} height={S} rx={rx} fill="currentColor" />
+      )}
+    </svg>
+  );
+}
+
+function MarkerPreview({ id }: { id: string }) {
+  const outerRx = id === 'square' ? 0 : 5;
+  return (
+    <svg width={35} height={35} viewBox="0 0 35 35" className="shrink-0">
+      <rect x={1} y={1} width={33} height={33} rx={outerRx} fill="none" stroke="currentColor" strokeWidth={4} />
+      {id === 'dot'
+        ? <circle cx={17.5} cy={17.5} r={8} fill="currentColor" />
+        : <rect x={11} y={11} width={13} height={13} rx={outerRx > 0 ? 3 : 0} fill="currentColor" />}
+    </svg>
+  );
+}
+
 export default function NewQRPage() {
   const router  = useRouter();
   const [qrType, setQrType] = useState<QRType>('URL');
@@ -442,8 +474,9 @@ export default function NewQRPage() {
               <div className="grid grid-cols-3 gap-2">
                 {DOT_STYLES.map(s => (
                   <button key={s.id} type="button" onClick={() => setDotStyle(s.id)}
-                    className={`px-2 py-2 rounded text-xs border ${dotStyle===s.id ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300' : 'border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-600'}`}>
-                    {s.label}
+                    className={`flex flex-col items-center gap-1.5 px-2 py-2.5 rounded text-xs border transition-colors ${dotStyle===s.id ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300' : 'border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-600'}`}>
+                    <DotStylePreview id={s.id} />
+                    <span>{s.label}</span>
                   </button>
                 ))}
               </div>
@@ -455,8 +488,9 @@ export default function NewQRPage() {
               <div className="grid grid-cols-3 gap-2">
                 {MARKER_STYLES.map(s => (
                   <button key={s.id} type="button" onClick={() => setMarkerStyle(s.id)}
-                    className={`px-2 py-2 rounded text-xs border ${markerStyle===s.id ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300' : 'border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-600'}`}>
-                    {s.label}
+                    className={`flex flex-col items-center gap-1.5 px-2 py-2.5 rounded text-xs border transition-colors ${markerStyle===s.id ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300' : 'border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-600'}`}>
+                    <MarkerPreview id={s.id} />
+                    <span>{s.label}</span>
                   </button>
                 ))}
               </div>
