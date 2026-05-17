@@ -7,6 +7,10 @@ export default function Footer() {
           Pricing
         </a>{' '}
         &middot;{' '}
+        <a href="/contact" className="hover:text-gray-400 underline">
+          Contact
+        </a>{' '}
+        &middot;{' '}
         <a href="/privacy" className="hover:text-gray-400 underline">
           Privacy Policy
         </a>{' '}
