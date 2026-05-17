@@ -19,11 +19,14 @@ interface QRData {
 interface DayCount { date: string; count: number; }
 interface CountryCount { country: string; count: number; }
 
+interface Attribution { source: string | null; medium: string | null; campaign: string | null; }
+
 interface Analytics {
   qr: QRData;
   total_scans: number;
   last_30_days: DayCount[];
   top_countries: CountryCount[];
+  attribution: Attribution;
 }
 
 export default function QRAnalyticsPage() {
@@ -89,7 +92,7 @@ export default function QRAnalyticsPage() {
     </div>
   );
 
-  const { qr, total_scans, last_30_days, top_countries } = data;
+  const { qr, total_scans, last_30_days, top_countries, attribution } = data;
   const maxCount = Math.max(...last_30_days.map(d => d.count), 1);
 
   return (
@@ -189,6 +192,18 @@ export default function QRAnalyticsPage() {
         {top_countries.length === 0 && total_scans === 0 && (
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center text-gray-500">
             No scans yet. Share your QR code to start tracking.
+          </div>
+        )}
+
+        {/* Attribution tags */}
+        {(attribution?.source || attribution?.medium || attribution?.campaign) && (
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-6">
+            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">Attribution</h2>
+            <div className="flex flex-wrap gap-2">
+              {attribution.source   && <span className="px-3 py-1 bg-indigo-500/10 border border-indigo-500/30 rounded-full text-indigo-300 text-xs">source: {attribution.source}</span>}
+              {attribution.medium   && <span className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-emerald-300 text-xs">medium: {attribution.medium}</span>}
+              {attribution.campaign && <span className="px-3 py-1 bg-amber-500/10 border border-amber-500/30 rounded-full text-amber-300 text-xs">campaign: {attribution.campaign}</span>}
+            </div>
           </div>
         )}
 

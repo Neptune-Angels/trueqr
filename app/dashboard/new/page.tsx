@@ -127,6 +127,12 @@ export default function NewQRPage() {
   const [frameText,   setFrameText]   = useState('SCAN ME');
   const [frameColor,  setFrameColor]  = useState('#10b981');
 
+  // Attribution
+  const [showAttribution, setShowAttribution] = useState(false);
+  const [utmSource,   setUtmSource]   = useState('');
+  const [utmMedium,   setUtmMedium]   = useState('');
+  const [utmCampaign, setUtmCampaign] = useState('');
+
   const buildContent = (): string => {
     switch (qrType) {
       case 'URL':    return url;
@@ -195,6 +201,9 @@ export default function NewQRPage() {
           destination_url,
           style_config: { dotStyle, markerStyle, color, bgColor, frameStyle, frameText, frameColor },
           ...(landing_config ? { landing_config } : {}),
+          ...(utmSource   ? { utm_source: utmSource }     : {}),
+          ...(utmMedium   ? { utm_medium: utmMedium }     : {}),
+          ...(utmCampaign ? { utm_campaign: utmCampaign } : {}),
         }),
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed'); }
@@ -542,6 +551,31 @@ export default function NewQRPage() {
                 </div>
               </div>
             )}
+
+            {/* Attribution */}
+            <div className="border border-gray-800 rounded-lg overflow-hidden">
+              <button type="button" onClick={() => setShowAttribution(v => !v)}
+                className="w-full flex items-center justify-between px-4 py-3 text-sm text-gray-400 hover:text-gray-300 hover:bg-gray-900/50 transition-colors">
+                <span className="font-medium">Attribution <span className="text-gray-600 font-normal">(optional)</span></span>
+                <span className="text-lg leading-none">{showAttribution ? '−' : '+'}</span>
+              </button>
+              {showAttribution && (
+                <div className="px-4 pb-4 space-y-3 border-t border-gray-800">
+                  <p className="text-xs text-gray-600 pt-3">Tag this QR code to track which campaigns, channels, and placements drive scans.</p>
+                  <div className="grid grid-cols-1 gap-3">
+                    <input type="text" value={utmSource} onChange={e => setUtmSource(e.target.value)}
+                      placeholder="Source — e.g. instagram, flyer, email"
+                      className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white text-sm placeholder-gray-600 focus:border-emerald-500 outline-none" />
+                    <input type="text" value={utmMedium} onChange={e => setUtmMedium(e.target.value)}
+                      placeholder="Medium — e.g. social, print, qr"
+                      className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white text-sm placeholder-gray-600 focus:border-emerald-500 outline-none" />
+                    <input type="text" value={utmCampaign} onChange={e => setUtmCampaign(e.target.value)}
+                      placeholder="Campaign — e.g. summer-sale, grand-opening"
+                      className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white text-sm placeholder-gray-600 focus:border-emerald-500 outline-none" />
+                  </div>
+                </div>
+              )}
+            </div>
 
             {error && <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/30 px-3 py-2 rounded">{error}</p>}
 

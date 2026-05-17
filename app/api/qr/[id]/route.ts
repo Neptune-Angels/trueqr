@@ -43,7 +43,7 @@ export async function PATCH(
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id } = await params;
-  let body: { destination_url?: string; name?: string; folder_id?: string | null };
+  let body: { destination_url?: string; name?: string; folder_id?: string | null; utm_source?: string | null; utm_medium?: string | null; utm_campaign?: string | null };
   try { body = await request.json(); } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
@@ -57,6 +57,9 @@ export async function PATCH(
   }
   if (body.name) updates.name = body.name;
   if ('folder_id' in body) updates.folder_id = body.folder_id ?? null;
+  if ('utm_source'   in body) updates.utm_source   = body.utm_source   ?? null;
+  if ('utm_medium'   in body) updates.utm_medium   = body.utm_medium   ?? null;
+  if ('utm_campaign' in body) updates.utm_campaign = body.utm_campaign ?? null;
 
   if (Object.keys(updates).length === 0)
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });

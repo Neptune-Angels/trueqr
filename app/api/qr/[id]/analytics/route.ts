@@ -21,7 +21,7 @@ export async function GET(
   // Verify ownership
   const { data: qr } = await supabaseAdmin
     .from('qr_codes')
-    .select('id, name, slug, destination_url, scan_count')
+    .select('id, name, slug, destination_url, scan_count, utm_source, utm_medium, utm_campaign')
     .eq('id', id)
     .eq('user_id', user.id)
     .single();
@@ -64,10 +64,17 @@ export async function GET(
     .slice(0, 5)
     .map(([country, count]) => ({ country, count }));
 
+  const attribution = {
+    source:   qr.utm_source   ?? null,
+    medium:   qr.utm_medium   ?? null,
+    campaign: qr.utm_campaign ?? null,
+  };
+
   return NextResponse.json({
     qr,
     total_scans: qr.scan_count,
     last_30_days: last30,
     top_countries: topCountries,
+    attribution,
   });
 }

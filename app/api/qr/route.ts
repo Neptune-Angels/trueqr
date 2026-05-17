@@ -38,14 +38,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  let body: { name?: string; destination_url?: string; style_config?: Record<string, string>; landing_config?: Record<string, unknown> };
+  let body: { name?: string; destination_url?: string; style_config?: Record<string, string>; landing_config?: Record<string, unknown>; utm_source?: string; utm_medium?: string; utm_campaign?: string };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { destination_url: rawDest, style_config, landing_config } = body;
+  const { destination_url: rawDest, style_config, landing_config, utm_source, utm_medium, utm_campaign } = body;
   let { name } = body;
 
   if (!rawDest) {
@@ -97,6 +97,9 @@ export async function POST(request: NextRequest) {
       user_id: user.id, slug, destination_url, name,
       ...(style_config   ? { style_config }   : {}),
       ...(landing_config ? { landing_config } : {}),
+      ...(utm_source   ? { utm_source }   : {}),
+      ...(utm_medium   ? { utm_medium }   : {}),
+      ...(utm_campaign ? { utm_campaign } : {}),
     })
     .select()
     .single();

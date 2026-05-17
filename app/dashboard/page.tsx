@@ -17,6 +17,9 @@ interface QRCodeData {
   is_active: boolean;
   created_at: string;
   folder_id: string | null;
+  utm_source:   string | null;
+  utm_medium:   string | null;
+  utm_campaign: string | null;
 }
 
 interface Folder {
@@ -57,7 +60,7 @@ export default function DashboardPage() {
       const [codesRes, foldersRes] = await Promise.all([
         supabase
           .from('qr_codes')
-          .select('id, name, slug, destination_url, scan_count, is_active, created_at, folder_id')
+          .select('id, name, slug, destination_url, scan_count, is_active, created_at, folder_id, utm_source, utm_medium, utm_campaign')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false }),
         fetch('/api/folders').then(r => r.json()),
@@ -188,6 +191,19 @@ export default function DashboardPage() {
 
   const uncategorizedCount = qrCodes.filter(q => !q.folder_id).length;
 
+  // Attribution summary: group by campaign across all QR codes
+  const campaignSummary = Object.entries(
+    qrCodes
+      .filter(q => q.utm_campaign)
+      .reduce<Record<string, { scans: number; count: number }>>((acc, q) => {
+        const key = q.utm_campaign!;
+        if (!acc[key]) acc[key] = { scans: 0, count: 0 };
+        acc[key].scans += q.scan_count;
+        acc[key].count += 1;
+        return acc;
+      }, {})
+  ).sort((a, b) => b[1].scans - a[1].scans);
+
   if (loading) return (
     <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
       <div className="text-gray-400">Loading…</div>
@@ -317,6 +333,28 @@ export default function DashboardPage() {
                 + Create QR Code
               </Link>
             </div>
+
+            {/* Attribution summary — shown when ≥1 QR has a campaign tag */}
+            {activeFolderId === 'all' && campaignSummary.length > 0 && (
+              <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 mb-6">
+                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Scans by Campaign</h3>
+                <div className="space-y-2">
+                  {campaignSummary.map(([campaign, { scans, count }]) => {
+                    const maxScans = campaignSummary[0][1].scans || 1;
+                    return (
+                      <div key={campaign} className="flex items-center gap-3">
+                        <span className="text-gray-300 text-sm truncate w-40 shrink-0">{campaign}</span>
+                        <div className="flex-1 bg-gray-800 rounded-full h-2">
+                          <div className="bg-amber-500 h-2 rounded-full transition-all" style={{ width: `${Math.round((scans / maxScans) * 100)}%` }} />
+                        </div>
+                        <span className="text-amber-300 text-sm w-12 text-right shrink-0">{scans.toLocaleString()} <span className="text-gray-600">scans</span></span>
+                        <span className="text-gray-600 text-xs w-16 shrink-0">{count} QR{count !== 1 ? 's' : ''}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* QR list */}
             {visibleQRCodes.length === 0 ? (
