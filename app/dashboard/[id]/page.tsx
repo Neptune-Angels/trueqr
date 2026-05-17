@@ -6,6 +6,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
+
 interface QRData {
   id: string;
   name: string;
@@ -32,6 +33,7 @@ export default function QRAnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+
   useEffect(() => {
     fetch(`/api/qr/${id}/analytics`)
       .then(r => {
@@ -43,6 +45,18 @@ export default function QRAnalyticsPage() {
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, [id, router]);
+
+  // Poll every 10 seconds for live scan count updates
+  useEffect(() => {
+    if (!id) return;
+    const interval = setInterval(() => {
+      fetch(`/api/qr/${id}/analytics`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d) setData(d); })
+        .catch(() => {});
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [id]);
 
   if (loading) return (
     <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
@@ -89,7 +103,13 @@ export default function QRAnalyticsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 text-center">
             <div className="text-3xl font-bold text-emerald-400">{total_scans}</div>
-            <div className="text-gray-400 text-sm mt-1">Total scans</div>
+            <div className="text-gray-400 text-sm mt-1 flex items-center justify-center gap-1.5">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              Total scans · live
+            </div>
           </div>
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 text-center">
             <div className="text-3xl font-bold text-indigo-400">

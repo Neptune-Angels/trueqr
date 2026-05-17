@@ -48,6 +48,22 @@ export default function DashboardPage() {
         .order('created_at', { ascending: false });
       setQrCodes(codes || []);
       setLoading(false);
+
+      // Poll every 15 seconds to refresh scan counts
+      const interval = setInterval(async () => {
+        const { data: refreshed } = await supabase
+          .from('qr_codes')
+          .select('id, scan_count')
+          .eq('user_id', user.id);
+        if (refreshed) {
+          setQrCodes(prev => prev.map(q => {
+            const match = refreshed.find((r: { id: string; scan_count: number }) => r.id === q.id);
+            return match ? { ...q, scan_count: match.scan_count } : q;
+          }));
+        }
+      }, 15000);
+
+      return () => clearInterval(interval);
     })();
   }, [router]);
 
