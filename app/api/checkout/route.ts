@@ -9,7 +9,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(request: NextRequest) {
   try {
-    // Require authenticated user before creating checkout
     const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,20 +29,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Parse billing interval from query or body
+    const url = new URL(request.url);
+    const billingParam = url.searchParams.get('billing');
+    let billing: 'monthly' | 'annual' = 'monthly';
+    try {
+      const body = await request.json();
+      if (body.billing === 'annual') billing = 'annual';
+    } catch { /* no body or not JSON */ }
+    if (billingParam === 'annual') billing = 'annual';
+
+    const isAnnual = billing === 'annual';
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer_email: user.email,
       client_reference_id: user.id,
+      subscription_data: {
+        trial_period_days: 7,
+        metadata: { billing },
+      },
       line_items: [
         {
           price_data: {
             currency: 'usd',
-            unit_amount: 1200,
-            recurring: { interval: 'month' },
+            unit_amount: isAnnual ? 9900 : 1200,
+            recurring: { interval: isAnnual ? 'year' : 'month' },
             product_data: {
-              name: 'TrueQR Pro',
+              name: isAnnual ? 'TrueQR Pro (Annual)' : 'TrueQR Pro',
               description: 'Dynamic QR codes, analytics, logo embed, bulk generate',
             },
           },

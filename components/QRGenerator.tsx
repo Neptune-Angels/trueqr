@@ -110,6 +110,9 @@ export default function QRGenerator() {
   const [generating, setGenerating] = useState(false);
   const [error, setError]         = useState<string | null>(null);
 
+  // Email capture prompt (shown once after first download)
+  const [showEmailPrompt, setShowEmailPrompt] = useState(false);
+
   // Logo state
   const [logoDataUrl, setLogoDataUrl]   = useState<string | null>(null);
   const [logoFileName, setLogoFileName] = useState<string | null>(null);
@@ -197,6 +200,7 @@ export default function QRGenerator() {
     a.href = qrDataUrl;
     a.download = `trueqr-${qrType}.png`;
     a.click();
+    if (!localStorage.getItem('tqr_email_prompt_dismissed')) setShowEmailPrompt(true);
   };
 
   const downloadSvg = () => {
@@ -208,6 +212,7 @@ export default function QRGenerator() {
     a.download = `trueqr-${qrType}.svg`;
     a.click();
     URL.revokeObjectURL(url);
+    if (!localStorage.getItem('tqr_email_prompt_dismissed')) setShowEmailPrompt(true);
   };
 
   const copyPng = async () => {
@@ -414,6 +419,30 @@ export default function QRGenerator() {
       )}
 
       <canvas ref={canvasRef} className="hidden" />
+
+      {/* Email capture prompt — shown once after first download */}
+      {showEmailPrompt && (
+        <div className="mt-4 flex items-center justify-between gap-4 bg-indigo-950 border border-indigo-700 rounded-xl px-4 py-3">
+          <div className="text-sm">
+            <span className="text-white font-medium">Want to save &amp; manage your QR codes?</span>
+            {' '}
+            <a href="/signup" className="text-indigo-400 hover:text-indigo-300 underline transition-colors">
+              Create a free account →
+            </a>
+            <span className="text-gray-500 ml-2 text-xs">(edit destination, track scans)</span>
+          </div>
+          <button
+            onClick={() => {
+              localStorage.setItem('tqr_email_prompt_dismissed', '1');
+              setShowEmailPrompt(false);
+            }}
+            className="text-gray-500 hover:text-white transition-colors shrink-0 text-lg leading-none"
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
+        </div>
+      )}
     </div>
   );
 }

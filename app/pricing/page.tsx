@@ -4,9 +4,6 @@ import { useState, useEffect } from 'react';
 import { createBrowserClient } from '@/lib/supabase';
 import Footer from '@/components/Footer';
 
-// Note: metadata export is incompatible with 'use client'.
-// SEO meta is handled via layout or a separate server component wrapper if needed.
-
 const FREE_FEATURES = [
   'Static QR codes — permanent',
   'All QR types (URL, WiFi, vCard, email, phone, text)',
@@ -48,7 +45,7 @@ function FreeCta() {
   );
 }
 
-function ProCta() {
+function ProCta({ billing }: { billing: 'monthly' | 'annual' }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [authed, setAuthed] = useState<boolean | null>(null);
@@ -59,15 +56,18 @@ function ProCta() {
   }, []);
 
   async function handleCheckout() {
-    // Require auth before checkout
     if (!authed) {
-      window.location.href = '/signup?next=/pricing';
+      window.location.href = `/signup?next=/pricing`;
       return;
     }
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/checkout', { method: 'POST' });
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ billing }),
+      });
       const data = await res.json();
       if (res.status === 401) {
         window.location.href = '/signup?next=/pricing';
@@ -101,9 +101,10 @@ function ProCta() {
             Redirecting to checkout…
           </>
         ) : (
-          'Start free trial'
+          'Start 7-day free trial'
         )}
       </button>
+      <p className="text-xs text-gray-500 text-center mt-2">No charge for 7 days. Cancel anytime.</p>
       {error && <p className="text-red-400 text-xs mt-2 text-center">{error}</p>}
     </div>
   );
@@ -121,14 +122,45 @@ function BusinessCta() {
 }
 
 export default function PricingPage() {
+  const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
+
   return (
     <main className="min-h-screen bg-gray-950 text-white py-16 px-4">
       <div className="max-w-5xl mx-auto">
         <h1 className="text-4xl font-bold text-center mb-3">Simple, honest pricing</h1>
-        <p className="text-gray-400 text-center mb-12 max-w-xl mx-auto">
+        <p className="text-gray-400 text-center mb-8 max-w-xl mx-auto">
           Static QR codes are free forever — no trial period, no expiration, no account required.
           Pay only for dynamic codes and analytics.
         </p>
+
+        {/* Billing toggle */}
+        <div className="flex justify-center mb-10">
+          <div className="inline-flex items-center bg-gray-900 border border-gray-800 rounded-xl p-1 gap-1">
+            <button
+              onClick={() => setBilling('monthly')}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                billing === 'monthly'
+                  ? 'bg-white text-gray-900'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBilling('annual')}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                billing === 'annual'
+                  ? 'bg-white text-gray-900'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Annual
+              <span className="text-xs font-semibold bg-emerald-500 text-black px-1.5 py-0.5 rounded-full">
+                Save 31%
+              </span>
+            </button>
+          </div>
+        </div>
 
         <div className="grid sm:grid-cols-3 gap-6 mb-16">
           {/* Free tier */}
@@ -153,10 +185,27 @@ export default function PricingPage() {
           <div className="rounded-2xl p-6 border flex flex-col bg-indigo-950 border-indigo-600 ring-1 ring-indigo-600">
             <span className="text-xs font-semibold text-indigo-400 uppercase tracking-widest mb-3">Most popular</span>
             <h2 className="text-xl font-bold mb-1">Pro</h2>
-            <div className="mb-4">
-              <span className="text-3xl font-bold">$12</span>
-              <span className="text-gray-500 text-sm ml-1">/month</span>
+            <div className="mb-1">
+              {billing === 'annual' ? (
+                <>
+                  <span className="text-3xl font-bold">$8.25</span>
+                  <span className="text-gray-500 text-sm ml-1">/month</span>
+                  <div className="text-xs text-gray-500 mt-0.5">$99 billed annually</div>
+                </>
+              ) : (
+                <>
+                  <span className="text-3xl font-bold">$12</span>
+                  <span className="text-gray-500 text-sm ml-1">/month</span>
+                </>
+              )}
             </div>
+            {billing === 'annual' && (
+              <div className="mb-3">
+                <span className="text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                  Save $45/year vs monthly
+                </span>
+              </div>
+            )}
             <ul className="text-sm text-gray-300 space-y-2 mb-8 flex-1">
               {PRO_FEATURES.map(f => (
                 <li key={f} className="flex items-start gap-2">
@@ -165,15 +214,25 @@ export default function PricingPage() {
                 </li>
               ))}
             </ul>
-            <ProCta />
+            <ProCta billing={billing} />
           </div>
 
           {/* Business tier */}
           <div className="rounded-2xl p-6 border flex flex-col bg-gray-900 border-gray-800">
             <h2 className="text-xl font-bold mb-1">Business</h2>
             <div className="mb-4">
-              <span className="text-3xl font-bold">$29</span>
-              <span className="text-gray-500 text-sm ml-1">/month</span>
+              {billing === 'annual' ? (
+                <>
+                  <span className="text-3xl font-bold">$20</span>
+                  <span className="text-gray-500 text-sm ml-1">/month</span>
+                  <div className="text-xs text-gray-500 mt-0.5">$240 billed annually</div>
+                </>
+              ) : (
+                <>
+                  <span className="text-3xl font-bold">$29</span>
+                  <span className="text-gray-500 text-sm ml-1">/month</span>
+                </>
+              )}
             </div>
             <ul className="text-sm text-gray-300 space-y-2 mb-8 flex-1">
               {BUSINESS_FEATURES.map(f => (
@@ -198,6 +257,10 @@ export default function PricingPage() {
             {
               q: "What's the difference between static and dynamic QR codes?",
               a: 'Static QR codes encode the destination directly in the pixel pattern. Dynamic QR codes encode a short redirect URL (e.g. trueqr.com/r/abc) that our server forwards to your actual destination. Dynamic codes can be updated after printing, but they require an active subscription to stay live.',
+            },
+            {
+              q: 'How does the 7-day free trial work?',
+              a: 'Start a Pro or Business subscription and your first 7 days are completely free. Your card is charged only after the trial ends. Cancel any time before that and you will not be billed.',
             },
             {
               q: 'Can I cancel my Pro subscription?',
