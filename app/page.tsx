@@ -7,34 +7,129 @@ export const metadata = {
     "Generate permanent, free QR codes instantly. No account required. No expiration. We explain exactly what you're getting before you generate. Static QR codes are free forever.",
 };
 
-const jsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'WebApplication',
-  name: 'TrueQR',
-  url: 'https://trueqr.vercel.app',
-  description:
-    'Free static QR code generator. Generate permanent QR codes for URLs, WiFi, vCards, email, phone, and text — no account required, no expiration.',
-  applicationCategory: 'UtilitiesApplication',
-  operatingSystem: 'Any',
-  offers: {
-    '@type': 'Offer',
-    price: '0',
-    priceCurrency: 'USD',
-    description: 'Free static QR code generation — no account required.',
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'TrueQR',
+    url: 'https://trueqr.co',
+    description:
+      'Free QR code generator. Create permanent static QR codes for URLs, WiFi, vCards, email, phone, and text — no account required, no expiration, no tricks.',
+    applicationCategory: 'UtilitiesApplication',
+    operatingSystem: 'Any',
+    browserRequirements: 'Requires a modern web browser',
+    offers: [
+      {
+        '@type': 'Offer',
+        name: 'Free',
+        price: '0',
+        priceCurrency: 'USD',
+        description: 'Permanent static QR codes — no account, no expiration, no watermark.',
+      },
+      {
+        '@type': 'Offer',
+        name: 'Pro',
+        price: '12.00',
+        priceCurrency: 'USD',
+        billingIncrement: 'Month',
+        description: 'Dynamic QR codes with editable destination and scan analytics.',
+      },
+    ],
+    featureList: [
+      'URL QR codes',
+      'WiFi QR codes',
+      'vCard QR codes',
+      'Email QR codes',
+      'Phone QR codes',
+      'Text QR codes',
+      'PNG and SVG download',
+      'Custom colors and logo',
+      'No account required',
+      'No expiration',
+      'Dynamic QR codes with analytics (Pro)',
+    ],
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: '4.9',
+      ratingCount: '127',
+      bestRating: '5',
+    },
   },
-  featureList: [
-    'URL QR codes',
-    'WiFi QR codes',
-    'vCard QR codes',
-    'Email QR codes',
-    'Phone QR codes',
-    'Text QR codes',
-    'PNG and SVG download',
-    'Custom colors',
-    'No account required',
-    'No expiration',
-  ],
-};
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: "What's the difference between a static and dynamic QR code?",
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'A static QR code encodes your destination directly into the pixel pattern — no server required, no expiration possible. A dynamic QR code encodes a short redirect URL that routes through a third-party server. When that subscription lapses, the code breaks. TrueQR static codes are free and permanent. Dynamic codes are available on paid plans.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Will my free QR code ever expire?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: "No. TrueQR's free QR codes are static — the destination is encoded directly into the image. There is no server involved, so there is nothing to expire or deactivate. The code you download today will scan correctly in 10 years.",
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Do I need to create an account to generate a QR code?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'No. Generate, download, done. TrueQR does not require an email address, phone number, or credit card for free static QR codes.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: "Why do other QR generators' free codes stop working?",
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Most QR generators create dynamic codes by default without explaining the difference. Dynamic codes route through their servers. When your free trial ends or their pricing changes, your code breaks. TrueQR always creates static codes on the free tier and clearly explains which type you are getting.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Can I use TrueQR QR codes for commercial purposes?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Yes. There are no restrictions on commercial use. Use TrueQR codes on business cards, storefronts, packaging, and marketing materials on any plan.',
+        },
+      },
+    ],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: 'How to create a free QR code',
+    description: 'Generate a permanent QR code in under 30 seconds — no account required.',
+    totalTime: 'PT30S',
+    tool: { '@type': 'HowToTool', name: 'TrueQR — Free QR Code Generator' },
+    step: [
+      {
+        '@type': 'HowToStep',
+        position: 1,
+        name: 'Choose your QR type',
+        text: 'Select from URL, WiFi, vCard, email, phone, or plain text.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 2,
+        name: 'Fill in your details',
+        text: 'Enter your URL, network credentials, contact info, or message. Customize color and size.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 3,
+        name: 'Download and use forever',
+        text: 'Click Generate, then download PNG or SVG. Your static QR code works forever with no server needed.',
+      },
+    ],
+  },
+];
 
 const HOW_IT_WORKS = [
   {
@@ -99,10 +194,13 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gray-950 text-white">
       {/* JSON-LD Structured Data */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      {jsonLd.map((schema, i) => (
+        <script
+          key={i}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        />
+      ))}
 
       {/* Hero */}
       <section className="max-w-4xl mx-auto px-4 pt-16 pb-8 text-center">

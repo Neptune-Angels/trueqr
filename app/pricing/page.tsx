@@ -24,15 +24,7 @@ const PRO_FEATURES = [
   'Email support',
 ];
 
-const BUSINESS_FEATURES = [
-  'Everything in Pro',
-  'REST API access',
-  'Bulk generation (up to 500)',
-  '3 team seats',
-  'White-label (remove TrueQR branding)',
-  'Custom domain short links',
-  'Priority support',
-];
+
 
 function FreeCta() {
   return (
@@ -110,16 +102,7 @@ function ProCta({ billing }: { billing: 'monthly' | 'annual' }) {
   );
 }
 
-function BusinessCta() {
-  return (
-    <a
-      href="/signup"
-      className="text-center py-2.5 rounded-xl font-medium text-sm transition-colors bg-gray-800 hover:bg-gray-700 text-white block"
-    >
-      Start free trial
-    </a>
-  );
-}
+
 
 export default function PricingPage() {
   const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
@@ -162,7 +145,7 @@ export default function PricingPage() {
           </div>
         </div>
 
-        <div className="grid sm:grid-cols-3 gap-6 mb-16">
+        <div className="grid sm:grid-cols-2 max-w-2xl mx-auto gap-6 mb-16">
           {/* Free tier */}
           <div className="rounded-2xl p-6 border flex flex-col bg-gray-900 border-gray-800">
             <h2 className="text-xl font-bold mb-1">Free</h2>
@@ -217,33 +200,7 @@ export default function PricingPage() {
             <ProCta billing={billing} />
           </div>
 
-          {/* Business tier */}
-          <div className="rounded-2xl p-6 border flex flex-col bg-gray-900 border-gray-800">
-            <h2 className="text-xl font-bold mb-1">Business</h2>
-            <div className="mb-4">
-              {billing === 'annual' ? (
-                <>
-                  <span className="text-3xl font-bold">$20</span>
-                  <span className="text-gray-500 text-sm ml-1">/month</span>
-                  <div className="text-xs text-gray-500 mt-0.5">$240 billed annually</div>
-                </>
-              ) : (
-                <>
-                  <span className="text-3xl font-bold">$29</span>
-                  <span className="text-gray-500 text-sm ml-1">/month</span>
-                </>
-              )}
-            </div>
-            <ul className="text-sm text-gray-300 space-y-2 mb-8 flex-1">
-              {BUSINESS_FEATURES.map(f => (
-                <li key={f} className="flex items-start gap-2">
-                  <span className="text-emerald-400 mt-0.5">✓</span>
-                  {f}
-                </li>
-              ))}
-            </ul>
-            <BusinessCta />
-          </div>
+
         </div>
 
         {/* FAQ */}
