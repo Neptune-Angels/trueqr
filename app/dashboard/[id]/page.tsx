@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { createBrowserClient } from '@/lib/supabase';
 
 
 interface QRData {
@@ -46,16 +47,31 @@ export default function QRAnalyticsPage() {
       .finally(() => setLoading(false));
   }, [id, router]);
 
-  // Poll every 10 seconds for live scan count updates
+  // Realtime: live scan counter via Supabase WebSocket
   useEffect(() => {
     if (!id) return;
-    const interval = setInterval(() => {
-      fetch(`/api/qr/${id}/analytics`)
-        .then(r => r.ok ? r.json() : null)
-        .then(d => { if (d) setData(d); })
-        .catch(() => {});
-    }, 10000);
-    return () => clearInterval(interval);
+    const supabase = createBrowserClient();
+    const today = new Date().toISOString().substring(0, 10);
+    const channel = supabase
+      .channel(`scans-${id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'qr_scans', filter: `qr_code_id=eq.${id}` },
+        () => {
+          setData(prev => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              total_scans: prev.total_scans + 1,
+              last_30_days: prev.last_30_days.map(d =>
+                d.date === today ? { ...d, count: d.count + 1 } : d
+              ),
+            };
+          });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [id]);
 
   if (loading) return (
