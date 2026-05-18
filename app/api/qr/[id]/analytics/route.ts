@@ -32,12 +32,15 @@ export async function GET(
   const since = new Date();
   since.setDate(since.getDate() - 30);
 
-  const { data: scans } = await supabaseAdmin
+  const { data: scans, error: scansError } = await supabaseAdmin
     .from('qr_scans')
     .select('scanned_at, country, city, latitude, longitude')
     .eq('qr_code_id', id)
     .gte('scanned_at', since.toISOString())
     .order('scanned_at', { ascending: true });
+
+  if (scansError) console.error('[analytics] qr_scans query error:', scansError.message, scansError.details);
+  console.log('[analytics] qr_id:', id, 'scans found:', scans?.length ?? 0, 'since:', since.toISOString());
 
   // Group by date
   const byDate: Record<string, number> = {};

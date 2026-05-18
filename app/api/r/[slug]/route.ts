@@ -58,7 +58,12 @@ export async function GET(
 
   if (countResult.status === 'rejected') console.error('[scan] count update failed:', countResult.reason);
   if (scanResult.status  === 'rejected') console.error('[scan] qr_scans insert failed:', scanResult.reason);
-  if (scanResult.status  === 'fulfilled' && scanResult.value.error) console.error('[scan] qr_scans insert error:', scanResult.value.error.message);
+  if (scanResult.status  === 'fulfilled' && scanResult.value.error) {
+    const e = scanResult.value.error;
+    console.error('[scan] qr_scans insert error:', e.message, e.code, e.details);
+  } else if (scanResult.status === 'fulfilled') {
+    console.log('[scan] qr_scans insert ok, slug:', slug, 'city:', cityDecoded, 'country:', country);
+  }
 
   return NextResponse.redirect(qrCode.destination_url, { status: 302 });
 }
