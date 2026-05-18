@@ -34,7 +34,7 @@ export async function GET(
 
   const { data: scans } = await supabaseAdmin
     .from('qr_scans')
-    .select('scanned_at, country')
+    .select('scanned_at, country, city, latitude, longitude')
     .eq('qr_code_id', id)
     .gte('scanned_at', since.toISOString())
     .order('scanned_at', { ascending: true });
@@ -43,11 +43,20 @@ export async function GET(
   const byDate: Record<string, number> = {};
   const byCountry: Record<string, number> = {};
 
+  // City heatmap aggregation
+  const cityMap: Record<string, { city: string; lat: number; lng: number; count: number }> = {};
+
   for (const scan of scans ?? []) {
     const date = scan.scanned_at.substring(0, 10);
     byDate[date] = (byDate[date] || 0) + 1;
     const country = scan.country || 'Unknown';
     byCountry[country] = (byCountry[country] || 0) + 1;
+
+    if (scan.city && scan.latitude != null && scan.longitude != null) {
+      const key = `${scan.city}|${Math.round(scan.latitude * 10) / 10}|${Math.round(scan.longitude * 10) / 10}`;
+      if (!cityMap[key]) cityMap[key] = { city: scan.city, lat: scan.latitude, lng: scan.longitude, count: 0 };
+      cityMap[key].count++;
+    }
   }
 
   // Fill in all 30 days (so chart has no gaps)
@@ -70,11 +79,14 @@ export async function GET(
     campaign: qr.utm_campaign ?? null,
   };
 
+  const cityHeatmap = Object.values(cityMap).sort((a, b) => b.count - a.count);
+
   return NextResponse.json({
     qr,
     total_scans: qr.scan_count,
     last_30_days: last30,
     top_countries: topCountries,
     attribution,
+    city_heatmap: cityHeatmap,
   });
 }

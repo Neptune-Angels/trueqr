@@ -6,6 +6,8 @@ import { useRouter, useParams } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { createBrowserClient } from '@/lib/supabase';
+import ScanHeatmap from '@/components/ScanHeatmap';
+import type { HeatPoint } from '@/components/ScanHeatmap';
 
 
 interface QRData {
@@ -27,6 +29,7 @@ interface Analytics {
   last_30_days: DayCount[];
   top_countries: CountryCount[];
   attribution: Attribution;
+  city_heatmap: HeatPoint[];
 }
 
 export default function QRAnalyticsPage() {
@@ -92,7 +95,7 @@ export default function QRAnalyticsPage() {
     </div>
   );
 
-  const { qr, total_scans, last_30_days, top_countries, attribution } = data;
+  const { qr, total_scans, last_30_days, top_countries, attribution, city_heatmap } = data;
   const maxCount = Math.max(...last_30_days.map(d => d.count), 1);
 
   return (
@@ -192,6 +195,28 @@ export default function QRAnalyticsPage() {
         {top_countries.length === 0 && total_scans === 0 && (
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center text-gray-500">
             No scans yet. Share your QR code to start tracking.
+          </div>
+        )}
+
+        {/* City heatmap */}
+        {city_heatmap?.length > 0 && (
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-6">
+            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">
+              Scan Map — {city_heatmap.length} {city_heatmap.length === 1 ? 'city' : 'cities'}
+            </h2>
+            <ScanHeatmap points={city_heatmap} />
+            {/* Top cities list */}
+            <div className="mt-4 space-y-2">
+              {city_heatmap.slice(0, 5).map((p, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <span className="text-gray-300 text-sm truncate w-40 shrink-0">{p.city}</span>
+                  <div className="flex-1 bg-gray-800 rounded-full h-1.5">
+                    <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: `${Math.round((p.count / city_heatmap[0].count) * 100)}%` }} />
+                  </div>
+                  <span className="text-gray-400 text-sm w-8 text-right shrink-0">{p.count}</span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

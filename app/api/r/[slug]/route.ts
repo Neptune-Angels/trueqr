@@ -7,7 +7,6 @@ export async function GET(
 ) {
   const { slug } = await params;
 
-  // Look up the slug in qr_codes table
   const { data: qrCode, error } = await supabaseAdmin
     .from('qr_codes')
     .select('id, destination_url, is_active, scan_count')
@@ -15,23 +14,27 @@ export async function GET(
     .single();
 
   if (error || !qrCode) {
-    return NextResponse.json(
-      { error: 'QR code not found' },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: 'QR code not found' }, { status: 404 });
   }
 
   if (!qrCode.is_active) {
-    return NextResponse.json(
-      { error: 'This QR code is no longer active' },
-      { status: 410 }
-    );
+    return NextResponse.json({ error: 'This QR code is no longer active' }, { status: 410 });
   }
 
   const userAgent = request.headers.get('user-agent') ?? undefined;
-  const referer = request.headers.get('referer') ?? undefined;
+  const referer   = request.headers.get('referer')    ?? undefined;
 
-  // Await both DB writes before redirecting — fire-and-forget gets killed by Vercel serverless
+  // Vercel geo headers — injected by the Edge Network on all plans
+  const country  = request.headers.get('x-vercel-ip-country')   ?? undefined;
+  const city     = request.headers.get('x-vercel-ip-city')       ?? undefined;
+  const rawLat   = request.headers.get('x-vercel-ip-latitude');
+  const rawLng   = request.headers.get('x-vercel-ip-longitude');
+  const latitude  = rawLat  ? parseFloat(rawLat)  : undefined;
+  const longitude = rawLng  ? parseFloat(rawLng)  : undefined;
+
+  // Decode URL-encoded city name (Vercel encodes spaces etc.)
+  const cityDecoded = city ? decodeURIComponent(city) : undefined;
+
   await Promise.allSettled([
     supabaseAdmin
       .from('qr_codes')
@@ -42,7 +45,11 @@ export async function GET(
       .insert({
         qr_code_id: qrCode.id,
         user_agent: userAgent,
-        referer: referer,
+        referer:    referer,
+        country:    country,
+        city:       cityDecoded,
+        latitude:   latitude  ?? null,
+        longitude:  longitude ?? null,
       }),
   ]);
 
