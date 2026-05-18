@@ -45,7 +45,7 @@ export default function ContactPage() {
           <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-8 text-center">
             <div className="text-4xl mb-3">✓</div>
             <h2 className="text-xl font-semibold text-emerald-400 mb-2">Message sent!</h2>
-            <p className="text-gray-400 mb-6">We&apos;ve received your message and sent you a confirmation email. We&apos;ll be in touch soon.</p>
+            <p className="text-gray-400 mb-6">We&apos;ve received your message and will be in touch soon.</p>
             <Link href="/" className="text-emerald-400 hover:text-emerald-300 underline text-sm">Back to home</Link>
           </div>
         ) : (

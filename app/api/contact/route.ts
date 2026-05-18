@@ -3,8 +3,10 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY!;
-const TO_EMAIL = 'conor@neufamily.com';
-const FROM_EMAIL = process.env.CONTACT_FROM_EMAIL ?? 'onboarding@resend.dev';
+// Resend restricts onboarding@resend.dev to the account owner's email until domain is verified.
+// Once trueqr.co domain is verified, switch TO_EMAIL to conor@neufamily.com and FROM_EMAIL to noreply@trueqr.co
+const TO_EMAIL = 'elmerintheflesh@hotmail.com';
+const FROM_EMAIL = 'onboarding@resend.dev';
 
 export async function POST(request: NextRequest) {
   let body: { name?: string; email?: string; subject?: string; message?: string };
@@ -67,28 +69,13 @@ export async function POST(request: NextRequest) {
   });
 
   if (!toRes.ok) {
-    console.error('Resend error (to Conor):', await toRes.text());
+    const errText = await toRes.text();
+    console.error('Resend error:', errText);
     return NextResponse.json({ error: 'Failed to send message. Please try again.' }, { status: 500 });
   }
 
-  // Auto-reply to sender
-  await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      from: FROM_EMAIL,
-      to: email,
-      subject: `We got your message — TrueQR Support`,
-      html: `
-        <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
-          <h2 style="color:#111">Thanks for reaching out, ${name}!</h2>
-          <p style="color:#444">We received your message and will get back to you as soon as possible${isPro ? ' — as a Pro user, you get priority support' : ''}.</p>
-          <div style="background:#f5f5f5;border-left:4px solid #10b981;padding:16px;border-radius:4px;white-space:pre-wrap;color:#444">${message.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
-          <p style="color:#999;font-size:12px;margin-top:24px">— The TrueQR Team &nbsp;·&nbsp; <a href="https://trueqr.co" style="color:#10b981">trueqr.co</a></p>
-        </div>
-      `,
-    }),
-  });
+  // Auto-reply disabled until trueqr.co domain is verified on Resend
+  // Resend blocks onboarding@resend.dev sends to non-account addresses
 
   return NextResponse.json({ ok: true });
 }
