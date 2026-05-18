@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { normalizeUrl } from '@/lib/url-utils';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
@@ -70,9 +71,12 @@ export async function POST(request: NextRequest) {
   }
 
   if (!isLinksType) {
-    try { new URL(rawDest); } catch {
+    const normalized = normalizeUrl(rawDest);
+    try { new URL(normalized); } catch {
       return NextResponse.json({ error: 'Invalid destination_url' }, { status: 400 });
     }
+    // Use the normalized URL
+    if (normalized !== rawDest) (body as Record<string, unknown>).destination_url = normalized;
   }
 
   // Ensure user record exists in public.users
@@ -89,7 +93,7 @@ export async function POST(request: NextRequest) {
     slug = generateSlug(8);
   }
 
-  const destination_url = isLinksType ? `https://trueqr.co/l/${slug}` : rawDest;
+  const destination_url = isLinksType ? `https://trueqr.co/l/${slug}` : normalizeUrl(rawDest);
 
   const { data: qrCode, error } = await supabaseAdmin
     .from('qr_codes')

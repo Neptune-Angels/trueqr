@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import QRCodeFrame, { FRAME_STYLES, type FrameStyle } from '@/components/QRCodeFrame';
+import { normalizeUrl, isValidUrl } from '@/lib/url-utils';
 
 type QRType = 'URL' | 'Text' | 'Email' | 'Phone' | 'SMS' | 'WiFi' | 'vCard' | 'Links' | 'Business' | 'PDF' | 'Gallery' | 'Event' | 'Coupon';
 
@@ -142,7 +143,7 @@ export default function NewQRPage() {
 
   const buildContent = (): string => {
     switch (qrType) {
-      case 'URL':    return url;
+      case 'URL':    return normalizeUrl(url);
       case 'Text':   return text;
       case 'Email':  return `mailto:${email}`;
       case 'Phone':  return `tel:${phone}`;
@@ -399,8 +400,25 @@ export default function NewQRPage() {
 
             {/* Content */}
             {qrType==='URL' && (
-              <input type="url" value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://example.com" required
-                className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none" />
+              <div>
+                <input
+                  type="text"
+                  value={url}
+                  onChange={e => setUrl(e.target.value)}
+                  onBlur={e => { const n = normalizeUrl(e.target.value); if (n !== e.target.value) setUrl(n); }}
+                  placeholder="e.g. trueqr.co, www.google.com, or https://example.com"
+                  required
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white focus:border-emerald-500 outline-none"
+                />
+                {url && !url.startsWith('http') && normalizeUrl(url) !== url && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    Will use: <span className="text-emerald-400">{normalizeUrl(url)}</span>
+                  </p>
+                )}
+                {url && !isValidUrl(url) && normalizeUrl(url) !== url && (
+                  <p className="mt-1 text-xs text-red-400">Doesn&apos;t look like a valid URL</p>
+                )}
+              </div>
             )}
             {qrType==='Text' && (
               <textarea value={text} onChange={e=>setText(e.target.value)} rows={3} placeholder="Enter text…"

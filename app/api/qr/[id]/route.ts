@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import { normalizeUrl } from '@/lib/url-utils';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
@@ -50,10 +51,11 @@ export async function PATCH(
 
   const updates: Record<string, string | null> = {};
   if (body.destination_url) {
-    try { new URL(body.destination_url); } catch {
+    const normalized = normalizeUrl(body.destination_url);
+    try { new URL(normalized); } catch {
       return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
     }
-    updates.destination_url = body.destination_url;
+    updates.destination_url = normalized;
   }
   if (body.name) updates.name = body.name;
   if ('folder_id' in body) updates.folder_id = body.folder_id ?? null;
