@@ -5,23 +5,28 @@ import { createBrowserClient } from '@/lib/supabase';
 import Footer from '@/components/Footer';
 
 const FREE_FEATURES = [
-  'Static QR codes — permanent',
-  'All QR types (URL, WiFi, vCard, email, phone, text)',
-  'Color customization',
+  'Static QR codes — permanent, no expiration',
+  'URL, WiFi, vCard, email, phone, SMS, text',
+  'Color & background customization',
   'PNG + SVG download',
   'No account required',
-  'No watermark',
+  'No watermark, ever',
   'No scan limits',
 ];
 
 const PRO_FEATURES = [
   'Everything in Free',
   'Dynamic QR codes (edit destination after printing)',
-  'Scan analytics (count, location, device, time)',
-  'Custom landing pages',
+  'Scan analytics — 30-day chart, live scan counter',
+  'City-level scan heatmap',
+  'UTM attribution tagging (source, medium, campaign)',
+  'Custom landing pages (links, business, PDF, gallery, event, coupon)',
+  'Dot & marker styles + QR frames',
   'Logo embedding',
+  'Folders to organise your QR codes',
+  '✨ AI QR builder — describe it, we build it',
   'Bulk generation (up to 25)',
-  'Email support',
+  'Priority email support',
 ];
 
 
