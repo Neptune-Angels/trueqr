@@ -244,6 +244,11 @@ export default function QRAnalyticsPage() {
           </div>
         )}
 
+        {/* DEBUG - remove after diagnosis */}
+        <details className="mb-6">
+          <summary className="text-gray-600 text-xs cursor-pointer">Debug data</summary>
+          <pre className="text-xs text-gray-500 bg-gray-900 p-3 rounded overflow-auto mt-2" style={{maxHeight:'200px'}}>{JSON.stringify({total_scans, last30_nonzero: last_30_days.filter(d=>d.count>0), top_countries, city_heatmap_len: city_heatmap?.length}, null, 2)}</pre>
+        </details>
         <Link href="/dashboard" className="text-gray-500 hover:text-white text-sm transition-colors">
           ← Back to Dashboard
         </Link>
