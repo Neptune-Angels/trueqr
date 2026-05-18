@@ -35,7 +35,7 @@ export async function GET(
   // Decode URL-encoded city name (Vercel encodes spaces etc.)
   const cityDecoded = city ? decodeURIComponent(city) : undefined;
 
-  await Promise.allSettled([
+  const [countResult, scanResult] = await Promise.allSettled([
     supabaseAdmin
       .from('qr_codes')
       .update({ scan_count: (qrCode.scan_count ?? 0) + 1 })
@@ -52,6 +52,10 @@ export async function GET(
         longitude:  longitude ?? null,
       }),
   ]);
+
+  if (countResult.status === 'rejected') console.error('[scan] count update failed:', countResult.reason);
+  if (scanResult.status  === 'rejected') console.error('[scan] qr_scans insert failed:', scanResult.reason);
+  if (scanResult.status  === 'fulfilled' && scanResult.value.error) console.error('[scan] qr_scans insert error:', scanResult.value.error.message);
 
   return NextResponse.redirect(qrCode.destination_url, { status: 302 });
 }

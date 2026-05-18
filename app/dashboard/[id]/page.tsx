@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
-import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { createBrowserClient } from '@/lib/supabase';
 import ScanHeatmap from '@/components/ScanHeatmap';
@@ -88,7 +87,6 @@ export default function QRAnalyticsPage() {
 
   if (error || !data) return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
-      <Header />
       <main className="flex-1 flex items-center justify-center">
         <p className="text-red-400">{error || 'Not found'}</p>
       </main>
@@ -100,7 +98,6 @@ export default function QRAnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
-      <Header />
       <main className="flex-1 max-w-3xl mx-auto px-4 py-12 w-full">
         {/* Breadcrumb */}
         <nav className="text-sm text-gray-500 mb-8">
@@ -150,25 +147,34 @@ export default function QRAnalyticsPage() {
         {/* Bar chart - last 30 days */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-6">
           <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">Scans — last 30 days</h2>
-          <div className="flex items-end gap-1 h-32">
-            {last_30_days.map(({ date, count }) => (
-              <div key={date} className="flex-1 flex flex-col items-center justify-end group relative" title={`${date}: ${count}`}>
-                <div
-                  className="w-full bg-indigo-600 group-hover:bg-indigo-400 rounded-t transition-colors"
-                  style={{ height: `${Math.max((count / maxCount) * 100, count > 0 ? 4 : 0)}%` }}
-                />
-                {/* Tooltip on hover */}
-                <div className="absolute bottom-full mb-1 hidden group-hover:block bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
-                  {date.slice(5)}: {count}
-                </div>
+          {last_30_days.every(d => d.count === 0) ? (
+            <div className="h-32 flex items-center justify-center text-gray-600 text-sm">
+              {total_scans > 0
+                ? 'Detailed chart data begins recording from today’s scans.'
+                : 'No scans yet — share your QR code to start tracking.'}
+            </div>
+          ) : (
+            <>
+              <div className="flex items-end gap-1 h-32">
+                {last_30_days.map(({ date, count }) => (
+                  <div key={date} className="flex-1 flex flex-col items-center justify-end group relative" title={`${date}: ${count}`}>
+                    <div
+                      className="w-full bg-indigo-600 group-hover:bg-indigo-400 rounded-t transition-colors"
+                      style={{ height: `${Math.max((count / maxCount) * 100, count > 0 ? 4 : 0)}%` }}
+                    />
+                    <div className="absolute bottom-full mb-1 hidden group-hover:block bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
+                      {date.slice(5)}: {count}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <div className="flex justify-between text-xs text-gray-600 mt-2">
-            <span>{last_30_days[0]?.date.slice(5)}</span>
-            <span>{last_30_days[14]?.date.slice(5)}</span>
-            <span>{last_30_days[29]?.date.slice(5)}</span>
-          </div>
+              <div className="flex justify-between text-xs text-gray-600 mt-2">
+                <span>{last_30_days[0]?.date.slice(5)}</span>
+                <span>{last_30_days[14]?.date.slice(5)}</span>
+                <span>{last_30_days[29]?.date.slice(5)}</span>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Top countries */}
@@ -199,6 +205,12 @@ export default function QRAnalyticsPage() {
         )}
 
         {/* City heatmap */}
+        {city_heatmap?.length === 0 && (
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-6">
+            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-2">Scan Map</h2>
+            <p className="text-gray-600 text-sm">Location data starts recording from new scans. Your map will appear here once someone scans this QR code.</p>
+          </div>
+        )}
         {city_heatmap?.length > 0 && (
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-6">
             <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">

@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 const SUBJECTS = ['Bug report', 'Feedback', 'Billing', 'Other'];
@@ -38,7 +37,6 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
-      <Header />
       <main className="flex-1 max-w-lg mx-auto px-4 py-16 w-full">
         <h1 className="text-3xl font-bold mb-2">Contact Support</h1>
         <p className="text-gray-400 mb-8">Have a question, bug report, or feedback? We&apos;ll get back to you quickly.</p>
