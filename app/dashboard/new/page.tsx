@@ -133,6 +133,13 @@ export default function NewQRPage() {
   const [utmMedium,   setUtmMedium]   = useState('');
   const [utmCampaign, setUtmCampaign] = useState('');
 
+  // AI Builder
+  const [showAI,    setShowAI]    = useState(false);
+  const [aiPrompt,  setAiPrompt]  = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiMessage, setAiMessage] = useState('');
+  const [aiError,   setAiError]   = useState('');
+
   const buildContent = (): string => {
     switch (qrType) {
       case 'URL':    return url;
@@ -160,6 +167,75 @@ export default function NewQRPage() {
     const r = await fetch('/api/upload', { method: 'POST', body: fd });
     if (!r.ok) { const d = await r.json(); throw new Error(d.error || 'Upload failed'); }
     return (await r.json()).url;
+  };
+
+  const handleAIGenerate = async () => {
+    if (!aiPrompt.trim()) return;
+    setAiLoading(true);
+    setAiError('');
+    setAiMessage('');
+    try {
+      const res = await fetch('/api/ai-qr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: aiPrompt }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setAiError(data.error || 'Something went wrong');
+        return;
+      }
+      // Apply AI result to form state
+      const { qrType: t, name: n, fields: f = {}, style: s = {}, message: msg } = data;
+      if (t) setQrType(t as QRType);
+      if (n) {} // name auto-generated on submit
+      // Content fields
+      if (f.url)         setUrl(f.url);
+      if (f.text)        setText(f.text);
+      if (f.email)       setEmail(f.email);
+      if (f.phone)       setPhone(f.phone);
+      if (f.smsPhone)    setSmsPhone(f.smsPhone);
+      if (f.smsMsg)      setSmsMsg(f.smsMsg);
+      if (f.wifiSsid)    setWifiSsid(f.wifiSsid);
+      if (f.wifiPass)    setWifiPass(f.wifiPass);
+      if (f.wifiType)    setWifiType(f.wifiType);
+      if (f.vcName)      setVcName(f.vcName);
+      if (f.vcPhone)     setVcPhone(f.vcPhone);
+      if (f.vcEmail)     setVcEmail(f.vcEmail);
+      if (f.vcCompany)   setVcCompany(f.vcCompany);
+      if (f.pageTitle)   setPageTitle(f.pageTitle);
+      if (f.pageSubtitle) setPageSubtitle(f.pageSubtitle);
+      if (f.accentColor) setAccentColor(f.accentColor);
+      if (Array.isArray(f.links) && f.links.length) setLinks(f.links);
+      if (f.bizName)     setBizName(f.bizName);
+      if (f.bizTagline)  setBizTagline(f.bizTagline);
+      if (f.bizPhone)    setBizPhone(f.bizPhone);
+      if (f.bizEmail)    setBizEmail(f.bizEmail);
+      if (f.bizWebsite)  setBizWebsite(f.bizWebsite);
+      if (f.bizAddress)  setBizAddress(f.bizAddress);
+      if (f.evtTitle)    setEvtTitle(f.evtTitle);
+      if (f.evtDate)     setEvtDate(f.evtDate);
+      if (f.evtTime)     setEvtTime(f.evtTime);
+      if (f.evtLocation) setEvtLocation(f.evtLocation);
+      if (f.evtDesc)     setEvtDesc(f.evtDesc);
+      if (f.evtCta)      setEvtCta(f.evtCta);
+      if (f.evtCtaUrl)   setEvtCtaUrl(f.evtCtaUrl);
+      if (f.cpnTitle)    setCpnTitle(f.cpnTitle);
+      if (f.cpnCode)     setCpnCode(f.cpnCode);
+      if (f.cpnDiscount) setCpnDiscount(f.cpnDiscount);
+      if (f.cpnDesc)     setCpnDesc(f.cpnDesc);
+      if (f.cpnExpiry)   setCpnExpiry(f.cpnExpiry);
+      // Style
+      if (s.color)       setColor(s.color);
+      if (s.bgColor)     setBgColor(s.bgColor);
+      if (s.dotStyle)    setDotStyle(s.dotStyle);
+      if (s.markerStyle) setMarkerStyle(s.markerStyle);
+      if (msg) setAiMessage(msg);
+    } catch {
+      setAiError('Failed to reach the AI. Please try again.');
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -248,6 +324,66 @@ export default function NewQRPage() {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-8">
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* AI Builder */}
+            <div className="border border-indigo-500/30 rounded-xl overflow-hidden bg-indigo-500/5">
+              <button type="button" onClick={() => { setShowAI(v => !v); setAiError(''); setAiMessage(''); }}
+                className="w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-indigo-500/10 transition-colors">
+                <span className="flex items-center gap-2 font-medium text-indigo-300">
+                  <span>✨</span> Build with AI
+                  <span className="text-xs font-normal text-indigo-400/70 bg-indigo-500/10 px-2 py-0.5 rounded-full">Pro</span>
+                </span>
+                <span className="text-indigo-400 text-lg leading-none">{showAI ? '−' : '+'}</span>
+              </button>
+              {showAI && (
+                <div className="px-4 pb-4 border-t border-indigo-500/20">
+                  <p className="text-xs text-indigo-300/60 pt-3 mb-3">Describe what you want in plain English — I&apos;ll set it up for you.</p>
+                  <div className="space-y-2 mb-3">
+                    <p className="text-xs text-gray-600">Examples:</p>
+                    {[
+                      'WiFi QR for my coffee shop Brew House, password: coffee123',
+                      'Business card for Sarah Chen, CEO at Acme, sarah@acme.com, +1 415 555 0100',
+                      'Coupon: 20% off summer sale, code SUMMER20, expires Aug 31',
+                      'Event: Grand Opening July 4th at 5pm, 123 Main St, RSVP at acme.com/rsvp',
+                    ].map(ex => (
+                      <button key={ex} type="button"
+                        onClick={() => setAiPrompt(ex)}
+                        className="block w-full text-left text-xs text-indigo-300/50 hover:text-indigo-300 px-2 py-1 rounded hover:bg-indigo-500/10 transition-colors truncate">
+                        &ldquo;{ex}&rdquo;
+                      </button>
+                    ))}
+                  </div>
+                  <textarea
+                    value={aiPrompt}
+                    onChange={e => setAiPrompt(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleAIGenerate(); }}
+                    rows={3}
+                    placeholder="e.g. WiFi QR for my restaurant, SSID: TacoShack, password: tacos2024"
+                    className="w-full px-3 py-2.5 bg-gray-900 border border-indigo-500/30 rounded-lg text-white text-sm placeholder-gray-600 focus:border-indigo-500 focus:outline-none resize-none"
+                  />
+                  <div className="flex items-center gap-3 mt-2">
+                    <button type="button" onClick={handleAIGenerate} disabled={aiLoading || !aiPrompt.trim()}
+                      className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors">
+                      {aiLoading ? (
+                        <><span className="animate-spin">⟳</span> Thinking…</>
+                      ) : (
+                        <><span>✨</span> Generate</>
+                      )}
+                    </button>
+                    <span className="text-xs text-gray-600">⌘+Enter to generate</span>
+                  </div>
+                  {aiMessage && (
+                    <div className="mt-3 flex items-start gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-lg px-3 py-2.5">
+                      <span className="text-indigo-400 shrink-0">✓</span>
+                      <p className="text-sm text-indigo-200">{aiMessage}</p>
+                    </div>
+                  )}
+                  {aiError && (
+                    <p className="mt-2 text-sm text-red-400">{aiError}</p>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Type picker */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Type</label>
