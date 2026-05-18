@@ -157,7 +157,7 @@ export default function QRAnalyticsPage() {
             <>
               <div className="flex items-end gap-1 h-32">
                 {last_30_days.map(({ date, count }) => (
-                  <div key={date} className="flex-1 flex flex-col items-center justify-end group relative" title={`${date}: ${count}`}>
+                  <div key={date} className="flex-1 h-full flex flex-col items-center justify-end group relative" title={`${date}: ${count}`}>
                     <div
                       className="w-full bg-indigo-600 group-hover:bg-indigo-400 rounded-t transition-colors"
                       style={{ height: `${Math.max((count / maxCount) * 100, count > 0 ? 4 : 0)}%` }}
