@@ -145,9 +145,15 @@ export async function POST(request: NextRequest) {
 
   let parsed: Record<string, unknown>;
   try {
-    // Strip any accidental markdown fences
-    const clean = rawText.replace(/^```(?:json)?\n?/m, '').replace(/\n?```$/m, '').trim();
-    parsed = JSON.parse(clean);
+    // Extract the first {...} JSON object — model sometimes wraps in ```json fences
+    // and adds trailing prose after the closing fence.
+    let candidate = rawText.trim();
+    const fenced = candidate.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (fenced) candidate = fenced[1];
+    const first = candidate.indexOf('{');
+    const last = candidate.lastIndexOf('}');
+    if (first !== -1 && last > first) candidate = candidate.slice(first, last + 1);
+    parsed = JSON.parse(candidate);
   } catch {
     console.error('Failed to parse AI response:', rawText);
     return NextResponse.json({ error: 'AI returned an unexpected response. Try rephrasing.' }, { status: 422 });
