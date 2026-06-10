@@ -4,6 +4,15 @@ import { useState, useEffect } from 'react';
 import { createBrowserClient } from '@/lib/supabase';
 import Footer from '@/components/Footer';
 
+// Minimal PostHog typing for window-global usage.
+declare global {
+  interface Window {
+    posthog?: {
+      capture: (event: string, props?: Record<string, unknown>) => void;
+    };
+  }
+}
+
 const FREE_FEATURES = [
   'Static QR codes — permanent, no expiration',
   'URL, WiFi, vCard, email, phone, SMS, text',
@@ -53,6 +62,18 @@ function ProCta({ billing }: { billing: 'monthly' | 'annual' }) {
   }, []);
 
   async function handleCheckout() {
+    // Fire conversion event BEFORE redirect so it lands even if Stripe
+    // navigation aborts the page.
+    try {
+      window.posthog?.capture('pricing_checkout_clicked', {
+        billing,
+        authed: !!authed,
+        location: 'pricing_page',
+      });
+    } catch {
+      // analytics must never break the flow
+    }
+
     if (!authed) {
       window.location.href = `/signup?next=/pricing`;
       return;
@@ -71,6 +92,12 @@ function ProCta({ billing }: { billing: 'monthly' | 'annual' }) {
         return;
       }
       if (data.url) {
+        try {
+          window.posthog?.capture('pricing_checkout_session_created', {
+            billing,
+            location: 'pricing_page',
+          });
+        } catch {}
         window.location.href = data.url;
       } else {
         setError(data.error || 'Something went wrong. Please try again.');
