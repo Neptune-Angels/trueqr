@@ -388,6 +388,21 @@ export default function QRGenerator() {
         {generating ? 'Generating…' : 'Generate QR Code'}
       </button>
 
+      {/* Dynamic-QR nudge — catches paid intent at the moment the static/dynamic distinction becomes meaningful */}
+      <p className="text-gray-400 text-xs text-center -mt-4 mb-6">
+        Need to change this link after printing?{' '}
+        <a
+          href="/pricing"
+          onClick={() => {
+            (window as unknown as { posthog?: { capture: (e: string, p?: Record<string, unknown>) => void } })
+              .posthog?.capture('generator_dynamic_nudge_clicked', { surface: 'below_generate_button' });
+          }}
+          className="text-indigo-400 hover:text-indigo-300 underline transition-colors"
+        >
+          Create a dynamic QR instead →
+        </a>
+      </p>
+
       {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
 
       {/* QR output */}
